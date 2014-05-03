@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERP_Mercury", "ERP_Mercury\ERP_Mercury.csproj", "{8F556307-79CD-42C2-AC74-1DC178C93B2A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERP_Mercury.Common", "ERP_Mercury.Common\ERP_Mercury.Common.csproj", "{A247C107-CBD9-4525-A216-DCEA79FE8BFC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERP_Mercury.Global", "ERP_Mercury.Global\ERP_Mercury.Global.csproj", "{A5B6351C-968D-4D78-B25F-FA48188D323E}"
+EndProject
+Global
+	GlobalSection(SubversionScc) = preSolution
+		Svn-Managed = True
+		Manager = AnkhSVN - Subversion Support for Visual Studio
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8F556307-79CD-42C2-AC74-1DC178C93B2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F556307-79CD-42C2-AC74-1DC178C93B2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F556307-79CD-42C2-AC74-1DC178C93B2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F556307-79CD-42C2-AC74-1DC178C93B2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A247C107-CBD9-4525-A216-DCEA79FE8BFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A247C107-CBD9-4525-A216-DCEA79FE8BFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A247C107-CBD9-4525-A216-DCEA79FE8BFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A247C107-CBD9-4525-A216-DCEA79FE8BFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5B6351C-968D-4D78-B25F-FA48188D323E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5B6351C-968D-4D78-B25F-FA48188D323E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5B6351C-968D-4D78-B25F-FA48188D323E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5B6351C-968D-4D78-B25F-FA48188D323E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
