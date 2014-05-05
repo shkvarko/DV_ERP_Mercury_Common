@@ -1019,5 +1019,117 @@ namespace ERP_Mercury.Common
         }
         #endregion
 
+        #region Объединение накладных
+        /// <summary>
+        /// Объедениение накладных
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="MainWaybill_Guid">УИ "главной" накладной</param>
+        /// <param name="MainDepart_Guid">УИ подразделения "главной" накладной</param>
+        /// <param name="MainWaybill_Num">УИ накладной "главной" накладной</param>
+        /// <param name="ChildWaybillList">список идентификаторов "дочерних" накладных</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean AddJoinDepartToDB(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid MainWaybill_Guid, System.Guid MainDepart_Guid, System.String MainWaybill_Num,
+            System.Data.DataTable ChildWaybillList,  ref System.String strErr )
+        {
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            //System.Data.SqlClient.SqlTransaction DBTransaction = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr = "Не удалось получить соединение с базой данных.";
+                        return bRet;
+                    }
+                    //DBTransaction = DBConnection.BeginTransaction();
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    //cmd.Transaction = DBTransaction;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_AddJoinDepart]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@MainWaybill_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@MainDepart_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@MainWaybill_Num", System.Data.DbType.String));
+
+                cmd.Parameters.AddWithValue("@tChildWaybillList", ChildWaybillList);
+                cmd.Parameters["@tChildWaybillList"].SqlDbType = System.Data.SqlDbType.Structured;
+                cmd.Parameters["@tChildWaybillList"].TypeName = "dbo.udt_GuidList";
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters["@MainWaybill_Guid"].Value = MainWaybill_Guid;
+                cmd.Parameters["@MainDepart_Guid"].Value = MainDepart_Guid;
+                cmd.Parameters["@MainWaybill_Num"].Value = MainWaybill_Num;
+                
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    strErr = "Объединение накладных завершено.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    //if (bRet == true)
+                    //{
+                    //    // подтверждаем транзакцию
+                    //    DBTransaction.Commit();
+                    //}
+                    //else
+                    //{
+                    //    // откатываем транзакцию
+                    //    DBTransaction.Rollback();
+                    //}
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                //if ((cmdSQL == null) && (DBTransaction != null))
+                //{
+                //    DBTransaction.Rollback();
+                //}
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
+
+
+        #endregion
+
     }
 }

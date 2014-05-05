@@ -996,7 +996,7 @@ namespace ERP_Mercury.Common
         }
         #endregion
 
-        #region Создание нового заказа
+        #region Создание новой накладной
         /// <summary>
         /// 
         /// </summary>
@@ -1173,6 +1173,136 @@ namespace ERP_Mercury.Common
             return bRet;
         }
 
+
+        #endregion
+
+        #region Объединение накладных
+        /// <summary>
+        /// Преобразует список записей к табличному виду
+        /// </summary>
+        /// <param name="objChildWaybillList">список уникальных идентификаторов</param>
+        /// <param name="strErr">сообщение об ошибке</param>
+        /// <returns>таблица</returns>
+        public static System.Data.DataTable ConvertWaybillGuidListToTable(List<System.Guid> objChildWaybillList, ref System.String strErr)
+        {
+            System.Data.DataTable objTable = new System.Data.DataTable();
+            try
+            {
+                objTable.Columns.Add(new System.Data.DataColumn("Item_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
+
+                System.Data.DataRow newRow = null;
+                foreach (System.Guid ItemID in objChildWaybillList)
+                {
+                    newRow = objTable.NewRow();
+                    newRow["Item_Guid"] = ItemID;
+                    objTable.Rows.Add(newRow);
+                }
+                if (objChildWaybillList.Count > 0)
+                {
+                    objTable.AcceptChanges();
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                objTable = null;
+                strErr += (String.Format("ConvertWaybillGuidListToTable. Текст ошибки: {0}", f.Message));
+            }
+			finally // очищаем занимаемые ресурсы
+            {
+            }
+            return objTable;
+        }
+
+        /// <summary>
+        /// Проверка значений перед объединением накладных
+        /// </summary>
+        /// <param name="MainWaybill_Guid">УИ "главной" накладной</param>
+        /// <param name="MainDepart_Guid">УИ подразделения "главной" накладной</param>
+        /// <param name="MainWaybill_Num">УИ накладной "главной" накладной</param>
+        /// <param name="ChildWaybillList">список идентификаторов "дочерних" накладных</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - проверка пройдена; false - проверка не пройдена</returns>
+        public static System.Boolean CheckAllPropertiesBeforeUnionWaybill(
+            System.Guid MainWaybill_Guid, System.Guid MainDepart_Guid, System.String MainWaybill_Num,
+            System.Data.DataTable ChildWaybillList, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                if (MainWaybill_Guid.CompareTo(System.Guid.Empty) == 0)
+                {
+                    strErr = "Укажите, пожалуйста, \"основную\" накладную.";
+                    return bRet;
+                }
+                if (MainDepart_Guid.CompareTo(System.Guid.Empty) == 0)
+                {
+                    strErr = "Укажите, пожалуйста, подразделение.";
+                    return bRet;
+                }
+                if (MainWaybill_Num.Trim().Length == 0)
+                {
+                    strErr = "Укажите, пожалуйста, номер накладной.";
+                    return bRet;
+                }
+                if ((ChildWaybillList == null) || (ChildWaybillList.Rows.Count == 0))
+                {
+                    strErr = "Список накладных для объединения не содержит записей. Добавьте, пожалуйста, хотя бы одну позицию.";
+                    return bRet;
+                }
+
+                bRet = true;
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "CheckAllPropertiesBeforeUnionWaybill.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+            }
+
+            return bRet;
+        }
+        /// <summary>
+        /// Объединение накладных
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="MainWaybill_Guid">УИ "главной" накладной</param>
+        /// <param name="MainDepart_Guid">УИ подразделения "главной" накладной</param>
+        /// <param name="MainWaybill_Num">УИ накладной "главной" накладной</param>
+        /// <param name="ChildWaybillList">список идентификаторов "дочерних" накладных</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean JoinWaybillInDB(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid MainWaybill_Guid, System.Guid MainDepart_Guid, System.String MainWaybill_Num,
+            List<System.Guid> ChildWaybillList,  ref System.String strErr )
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                System.Data.DataTable dtChildWaybillList = ConvertWaybillGuidListToTable(ChildWaybillList, ref strErr);
+
+                if (dtChildWaybillList != null)
+                {
+                    if (CheckAllPropertiesBeforeUnionWaybill(MainWaybill_Guid, MainDepart_Guid, MainWaybill_Num, dtChildWaybillList, ref strErr) == true)
+                    {
+                        bRet = CWaybillDataBaseModel.AddJoinDepartToDB(objProfile, null,
+                            MainWaybill_Guid, MainDepart_Guid, MainWaybill_Num, dtChildWaybillList, ref strErr);
+                    }
+                }
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+        }
 
         #endregion
 
