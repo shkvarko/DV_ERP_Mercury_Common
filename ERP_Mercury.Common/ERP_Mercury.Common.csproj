@@ -131,6 +131,9 @@
     <Compile Include="CEarning.cs" />
     <Compile Include="CEarningType.cs" />
     <Compile Include="CInfoAboutQualityProduct.cs" />
+    <Compile Include="Classes for BackWaybill\CBackWaybill.cs" />
+    <Compile Include="Classes for BackWaybill\CBackWaybillDataBaseModel.cs" />
+    <Compile Include="Classes for BackWaybill\CWaybillBackReason.cs" />
     <Compile Include="Classes for Waybill\CWaybillDataBaseModel.cs" />
     <Compile Include="Classes for Waybill\CWaybillShipMode.cs" />
     <Compile Include="Classes for Waybill\CWaybillState.cs" />

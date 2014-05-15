@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERP_Mercury", "ERP_Mercury\ERP_Mercury.csproj", "{8F556307-79CD-42C2-AC74-1DC178C93B2A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERP_Mercury.Common", "ERP_Mercury.Common\ERP_Mercury.Common.csproj", "{A247C107-CBD9-4525-A216-DCEA79FE8BFC}"
@@ -8,10 +8,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ERP_Mercury.Global", "ERP_Mercury.Global\ERP_Mercury.Global.csproj", "{A5B6351C-968D-4D78-B25F-FA48188D323E}"
 EndProject
 Global
-	GlobalSection(SubversionScc) = preSolution
-		Svn-Managed = True
-		Manager = AnkhSVN - Subversion Support for Visual Studio
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
