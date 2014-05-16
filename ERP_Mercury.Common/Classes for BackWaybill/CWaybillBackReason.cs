@@ -107,6 +107,83 @@ namespace ERP_Mercury.Common
         }
         #endregion
 
+        #region Remove
+        /// <summary>
+        /// Удалить запись из БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="uuidID">уникальный идентификатор объекта</param>
+        /// <returns>true - удачное завершение; false - ошибка</returns>
+        public override System.Boolean Remove(UniXP.Common.CProfile objProfile)
+        {
+            System.String strErr = "";
+
+            System.Boolean bRet = CWaybillBackReasonDataBaseModel.RemoveObjectFromDataBase(this.ID, objProfile, ref strErr);
+            if (bRet == false)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(strErr, "Внимание",
+                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+
+            return bRet;
+        }
+        #endregion
+
+        #region Add
+        /// <summary>
+        /// Добавить запись в БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <returns>true - удачное завершение; false - ошибка</returns>
+        public override System.Boolean Add(UniXP.Common.CProfile objProfile)
+        {
+            System.String strErr = "";
+
+            System.Guid GUID_ID = System.Guid.Empty;
+
+            System.Boolean bRet = CWaybillBackReasonDataBaseModel.AddNewObjectToDataBase(
+                this.Name, this.Description, this.IsActive, this.IsDefault,
+                this.WaybillBackReasonId, ref GUID_ID, objProfile, ref strErr);
+            if (bRet == true)
+            {
+                this.ID = GUID_ID;
+            }
+            else
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(strErr, "Внимание",
+                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+
+            return bRet;
+        }
+        #endregion
+
+        #region Update
+        /// <summary>
+        /// Сохранить изменения в БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <returns>true - удачное завершение; false - ошибка</returns>
+        public override System.Boolean Update(UniXP.Common.CProfile objProfile)
+        {
+            System.String strErr = "";
+
+            System.Boolean bRet = CWaybillBackReasonDataBaseModel.EditObjectInDataBase(this.ID,
+                this.Name, this.Description, this.IsActive, this.IsDefault, this.WaybillBackReasonId, objProfile, ref strErr);
+            if (bRet == false)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(strErr, "Внимание",
+                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+
+            return bRet;
+        }
+        #endregion
+
+        public override string ToString()
+        {
+            return Name;
+        }
 
     }
 

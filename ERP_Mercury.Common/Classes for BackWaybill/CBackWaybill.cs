@@ -13,6 +13,26 @@ namespace ERP_Mercury.Common
     public class CBackWaybillItem
     {
         #region Конструктор
+
+        public CBackWaybillItem()
+        {
+            ID = System.Guid.Empty;
+            Ib_ID = 0;
+            WaybItemID = System.Guid.Empty;
+            WaybItemIb_ID = 0;
+            Measure = null;
+            Product = null;
+
+            Quantity = 0;
+            PriceImporter = 0;
+            NDSPercent = 0;
+            Price = 0;
+            DiscountPercent = 0;
+            PriceWithDiscount = 0;
+            PriceInAccountingCurrency = 0;
+            PriceWithDiscountInAccountingCurrency = 0;
+        }
+
         #endregion
 
         #region Уникальные идентификаторы
@@ -343,6 +363,34 @@ namespace ERP_Mercury.Common
     public class CBackWaybill
     {
         #region Конструктор
+        public CBackWaybill()
+        {
+            ID = System.Guid.Empty;
+            Ib_ID = 0;
+            ParentID = System.Guid.Empty;
+            WaybillID = System.Guid.Empty;
+            DocNum = System.String.Empty;
+            BeginDate = System.DateTime.MinValue;
+            WaybillShipMode = null;
+            Customer = null;
+            ChildDepart = null;
+            SalesMan = null;
+            Depart = null;
+            Stock = null;
+            Company = null;
+            WaybillState = null;
+            WaybillBackReason = null;
+            PaymentType = null;
+            Currency = null;
+            Description = System.String.Empty;
+            WaybillItemList = null;
+            Quantity = 0;
+            PricingCurrencyRate = 0;
+            SumWaybill = 0;
+            SumDiscount = 0;
+            SumWaybillInAccountingCurrency = 0;
+            SumDiscountInAccountingCurrency = 0;
+        }
         #endregion
 
         #region Уникальные идентификаторы
