@@ -195,7 +195,6 @@ namespace ERP_Mercury.Common
                         newRow["Customer_Guid"] = ((rs["Customer_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Customer_Guid"] : System.Guid.Empty);
                         newRow["Customer_Id"] = ((rs["Customer_Id"] != System.DBNull.Value) ? (System.Int32)rs["Customer_Id"] : 0);
                         newRow["Customer_Name"] = ((rs["Customer_Name"] != System.DBNull.Value) ? System.Convert.ToString(rs["Customer_Name"]) : System.String.Empty);
-                        newRow["Customer_Name"] = ((rs["Customer_Name"] != System.DBNull.Value) ? System.Convert.ToString(rs["Customer_Name"]) : System.String.Empty);
 
                         newRow["Currency_Guid"] = ((rs["Currency_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Currency_Guid"] : System.Guid.Empty);
                         newRow["Currency_Abbr"] = ((rs["Currency_Abbr"] != System.DBNull.Value) ? System.Convert.ToString(rs["Currency_Abbr"]) : System.String.Empty);
@@ -230,9 +229,9 @@ namespace ERP_Mercury.Common
                         newRow["BackWaybill_AllPrice"] = rs["BackWaybill_AllPrice"];
                         newRow["BackWaybill_CurrencyRate"] = rs["BackWaybill_CurrencyRate"];
 
-                        newRow["BackWaybill_AllDiscount"] = rs["BackWaybill_AllDiscount"];
+                        newRow["BackWaybill_AllDiscount"] = 0; // rs["BackWaybill_AllDiscount"];
                         newRow["BackWaybill_CurrencyAllPrice"] = rs["BackWaybill_CurrencyAllPrice"];
-                        newRow["BackWaybill_CurrencyAllDiscount"] = rs["BackWaybill_CurrencyAllDiscount"];
+                        newRow["BackWaybill_CurrencyAllDiscount"] = 0; // rs["BackWaybill_CurrencyAllDiscount"];
 
                         newRow["BackWaybill_Quantity"] = System.Convert.ToDecimal(rs["BackWaybill_Quantity"]);
 
@@ -279,6 +278,8 @@ namespace ERP_Mercury.Common
             dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_Guid", typeof(System.Guid)));
             dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_Id", typeof(System.Int32)));
             dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybill_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_Num", typeof(System.String)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_BeginDate", typeof(System.DateTime)));
 
             dtReturn.Columns.Add(new System.Data.DataColumn("Parts_Guid", typeof(System.Guid)));
             dtReturn.Columns.Add(new System.Data.DataColumn("Measure_Guid", typeof(System.Guid)));
@@ -375,6 +376,13 @@ namespace ERP_Mercury.Common
                         newRow["WaybItem_Guid"] = ((rs["WaybItem_Guid"] != System.DBNull.Value) ? (System.Guid)rs["WaybItem_Guid"] : System.Guid.Empty);
                         newRow["BackWaybill_Guid"] = ((rs["BackWaybill_Guid"] != System.DBNull.Value) ? (System.Guid)rs["BackWaybill_Guid"] : System.Guid.Empty);
                         newRow["BackWaybItem_Id"] = ((rs["BackWaybItem_Id"] != System.DBNull.Value) ? (System.Int32)rs["BackWaybItem_Id"] : 0);
+
+                        newRow["Waybill_Num"] = ((rs["Waybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(rs["Waybill_Num"]) : System.String.Empty);
+                        if (rs["Waybill_BeginDate"] != System.DBNull.Value)
+                        {
+                            newRow["Waybill_BeginDate"] = rs["Waybill_BeginDate"];
+                        }
+                        
                         newRow["Measure_Guid"] = ((rs["Measure_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Measure_Guid"] : System.Guid.Empty);
                         newRow["Parts_Guid"] = ((rs["Parts_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Parts_Guid"] : System.Guid.Empty);
 
@@ -393,7 +401,7 @@ namespace ERP_Mercury.Common
                         newRow["BackWaybItem_PriceImporter"] = rs["BackWaybItem_PriceImporter"];
 
                         newRow["BackWaybItem_CurrencyPrice"] = rs["BackWaybItem_CurrencyPrice"];
-                        newRow["BackWaybItem_CurrencyDiscountPrice"] = rs["BackWaybItem_CurrencyDiscountPrice"];
+                        newRow["BackWaybItem_CurrencyDiscountPrice"] = rs["BackWaybItem_CurrencyPrice"];
                         newRow["BackWaybItem_CurrencyAllPrice"] = rs["BackWaybItem_CurrencyAllPrice"];
                         newRow["BackWaybItem_CurrencyTotalPrice"] = rs["BackWaybItem_CurrencyAllPrice"];
                         newRow["BackWaybItem_NDSPercent"] = 0; // rs["WaybItem_NDSPercent"];
@@ -597,6 +605,156 @@ namespace ERP_Mercury.Common
             }
             return bRet;
         }
+        #endregion
+
+        #region Список позиций, доступных к возврату
+        /// <summary>
+        /// Возвращает таблицу со списком позиций для возврата
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">объект "SQL-команда"</param>
+        /// <param name="Waybill_Guid">уи накладной</param>
+        /// <param name="Customer_Guid">уи накладной</param>
+        /// <param name="Stock_Guid">уи накладной</param>
+        /// <param name="PaymentType_Guid">уи накладной</param>
+        /// <param name="ShipDate_Begin">уи накладной</param>
+        /// <param name="ShipDate_End">уи накладной</param>
+        /// <param name="strErr">строка с сообщением об ошибке</param>
+        /// <returns>список позиций для возврата в виде объекта класса DataTable</returns>
+        public static System.Data.DataTable GetTableSrcForBackWaybillItem(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL, 
+            System.Guid Waybill_Guid, 
+            System.Guid Customer_Guid,  System.Guid Stock_Guid,  System.Guid PaymentType_Guid, System.DateTime ShipDate_Begin, System.DateTime ShipDate_End,
+            ref System.String strErr)
+        {
+            System.Data.DataTable dtReturn = new System.Data.DataTable();
+
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_Num", typeof(System.String)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_BeginDate", typeof(System.DateTime)));
+
+            dtReturn.Columns.Add(new System.Data.DataColumn("Parts_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Measure_Guid", typeof(System.Guid)));
+
+            dtReturn.Columns.Add(new System.Data.DataColumn("PartsOwner_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("PartsPartType_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Parts_Name", typeof(System.String)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Parts_Article", typeof(System.String)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Measure_ShortName", typeof(System.String)));
+
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_Quantity", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_LeavQuantity", typeof(System.Double)));
+
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_NDSPercent", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_PriceImporter", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_Price", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_Discount", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_DiscountPrice", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_CurrencyPrice", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("WaybItem_CurrencyDiscountPrice", typeof(System.Double)));
+
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr += ("Не удалось получить соединение с базой данных.");
+                        return dtReturn;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetSrcForBackWaybillItems]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                if (Waybill_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_Guid", System.Data.DbType.Guid));
+                    cmd.Parameters["@Waybill_Guid"].Value = Waybill_Guid;
+                }
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Customer_Guid", System.Data.DbType.Guid));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Stock_Guid", System.Data.DbType.Guid));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PaymentType_Guid", System.Data.DbType.Guid));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ShipDate_Begin", System.Data.DbType.Date));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ShipDate_End", System.Data.DbType.Date));
+
+                cmd.Parameters["@Customer_Guid"].Value = Customer_Guid;
+                cmd.Parameters["@Stock_Guid"].Value = Stock_Guid;
+                cmd.Parameters["@PaymentType_Guid"].Value = PaymentType_Guid;
+                cmd.Parameters["@ShipDate_Begin"].Value = ShipDate_Begin;
+                cmd.Parameters["@ShipDate_End"].Value = ShipDate_End;
+
+                System.Data.SqlClient.SqlDataReader rs = cmd.ExecuteReader();
+                System.Int32 iRecordCount = 0;
+                if (rs.HasRows)
+                {
+                    System.Data.DataRow newRow = null;
+                    while (rs.Read())
+                    {
+                        iRecordCount++;
+
+                        newRow = dtReturn.NewRow();
+
+                        newRow["WaybItem_Guid"] = ((rs["WaybItem_Guid"] != System.DBNull.Value) ? (System.Guid)rs["WaybItem_Guid"] : System.Guid.Empty);
+                        newRow["Waybill_Guid"] = ((rs["Waybill_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Waybill_Guid"] : System.Guid.Empty);
+                        newRow["Measure_Guid"] = ((rs["Measure_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Measure_Guid"] : System.Guid.Empty);
+                        newRow["Parts_Guid"] = ((rs["Parts_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Parts_Guid"] : System.Guid.Empty);
+
+                        newRow["PartsOwner_Guid"] = ((rs["PartsOwner_Guid"] != System.DBNull.Value) ? (System.Guid)rs["PartsOwner_Guid"] : System.Guid.Empty);
+                        newRow["PartsPartType_Guid"] = ((rs["PartsPartType_Guid"] != System.DBNull.Value) ? (System.Guid)rs["PartsPartType_Guid"] : System.Guid.Empty);
+
+                        newRow["Parts_Name"] = ((rs["Parts_Name"] != System.DBNull.Value) ? System.Convert.ToString(rs["Parts_Name"]) : System.String.Empty);
+                        newRow["Parts_Article"] = ((rs["Parts_Article"] != System.DBNull.Value) ? System.Convert.ToString(rs["Parts_Article"]) : System.String.Empty);
+                        newRow["Measure_ShortName"] = ((rs["Measure_ShortName"] != System.DBNull.Value) ? System.Convert.ToString(rs["Measure_ShortName"]) : System.String.Empty);
+
+                        newRow["WaybItem_Quantity"] = rs["WaybItem_Quantity"];
+                        newRow["WaybItem_LeavQuantity"] = rs["WaybItem_LeavQuantity"];
+
+                        newRow["WaybItem_NDSPercent"] = rs["WaybItem_NDSPercent"];
+                        newRow["WaybItem_PriceImporter"] = rs["WaybItem_PriceImporter"];
+                        newRow["WaybItem_Price"] = rs["WaybItem_Price"];
+                        newRow["WaybItem_Discount"] = rs["WaybItem_Discount"];
+                        newRow["WaybItem_DiscountPrice"] = rs["WaybItem_DiscountPrice"];
+
+                        newRow["WaybItem_CurrencyPrice"] = rs["WaybItem_CurrencyPrice"];
+                        newRow["WaybItem_CurrencyDiscountPrice"] = rs["WaybItem_CurrencyDiscountPrice"];
+
+                        newRow["Waybill_Num"] = rs["Waybill_Num"];
+                        newRow["Waybill_BeginDate"] = rs["Waybill_BeginDate"];
+                        dtReturn.Rows.Add(newRow);
+                    }
+
+                    dtReturn.AcceptChanges();
+                }
+                rs.Dispose();
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    DBConnection.Close();
+                }
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("\nНе удалось получить таблицу со списком позиций для возврата.\nТекст ошибки: {0}", f.Message));
+            }
+            return dtReturn;
+        }
+
+
         #endregion
 
     }

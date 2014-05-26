@@ -20,6 +20,8 @@ namespace ERP_Mercury.Common
             Ib_ID = 0;
             WaybItemID = System.Guid.Empty;
             WaybItemIb_ID = 0;
+            WaybillNum = System.String.Empty;
+            WaybillDate = System.DateTime.MinValue;
             Measure = null;
             Product = null;
 
@@ -52,6 +54,14 @@ namespace ERP_Mercury.Common
         /// Уникальный идентификатор строки в приложении к накладной
         /// </summary>
         public System.Int32 WaybItemIb_ID { get; set; }
+        /// <summary>
+        /// Номер накладной на отгрузку
+        /// </summary>
+        public System.String WaybillNum { get; set; }
+        /// <summary>
+        /// Дата отгрузки
+        /// </summary>
+        public System.DateTime WaybillDate { get; set; }
         #endregion
 
         #region Товарная позиция
@@ -181,6 +191,11 @@ namespace ERP_Mercury.Common
                         objWaybillItem.PriceInAccountingCurrency = ((objItem["BackWaybItem_CurrencyPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["BackWaybItem_CurrencyPrice"]) : 0);
                         objWaybillItem.PriceWithDiscountInAccountingCurrency = ((objItem["BackWaybItem_CurrencyDiscountPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["BackWaybItem_CurrencyDiscountPrice"]) : 0);
 
+                        objWaybillItem.WaybillNum = ((objItem["Waybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Waybill_Num"]) : System.String.Empty);
+                        if (objItem["Waybill_BeginDate"] != System.DBNull.Value)
+                        {
+                            objWaybillItem.WaybillDate = System.Convert.ToDateTime(objItem["Waybill_BeginDate"]);
+                        }
 
                         if (objWaybillItem != null) { objList.Add(objWaybillItem); }
 
@@ -817,6 +832,202 @@ namespace ERP_Mercury.Common
         #endregion
 
     }
+
+    /// <summary>
+    /// Класс "Строка в выпадающем списке для оформления возврата"
+    /// </summary>
+    public class CSrcBackWaybillItem
+    {
+        #region Свойства
+        /// <summary>
+        /// Уникальный идентификатор строки в приложении к накладной
+        /// </summary>
+        public System.Guid WaybItemID { get; set; }
+        /// <summary>
+        /// Номер накладной на отгрузку
+        /// </summary>
+        public System.String WaybillNum { get; set; }
+        /// <summary>
+        /// Дата отгрузки
+        /// </summary>
+        public System.DateTime WaybillDate { get; set; }
+        /// <summary>
+        /// Товар
+        /// </summary>
+        public CProduct Product { get; set; }
+        /// <summary>
+        /// Наименование товара
+        /// </summary>
+        public System.String ProductFullName
+        {
+            get { return ((Product == null) ? "" : Product.ProductFullName); }
+            set { ProductFullName = value; }
+        }
+        /// <summary>
+        /// Единица измерения
+        /// </summary>
+        public CMeasure Measure { get; set; }
+        /// <summary>
+        /// Сокращенное наименование единицы измерения
+        /// </summary>
+        public System.String MeasureName
+        {
+            get { return ((Measure == null) ? "" : Measure.ShortName ); }
+            set { MeasureName = value; }
+        }
+        /// <summary>
+        /// Количество проданное
+        /// </summary>
+        public System.Double Quantity { get; set; }
+        /// <summary>
+        /// Количество доступное к возврату
+        /// </summary>
+        public System.Double LeavQuantity { get; set; }
+        /// <summary>
+        /// Цена первого поставщика (в национальной валюте)
+        /// </summary>
+        public System.Double PriceImporter { get; set; }
+        /// <summary>
+        /// Ставка НДС в процентах
+        /// </summary>
+        public System.Double NDSPercent { get; set; }
+        /// <summary>
+        /// Цена отпускная (в национальной валюте)
+        /// </summary>
+        public System.Double Price { get; set; }
+        /// <summary>
+        /// Размер скидки в процентах
+        /// </summary>
+        public System.Double DiscountPercent { get; set; }
+        /// <summary>
+        /// Цена отпускная с учетом скидки
+        /// </summary>
+        public System.Double PriceWithDiscount { get; set; }
+        /// <summary>
+        /// Сумма без учета скидки (в национальной валюте)
+        /// </summary>
+        public System.Double Sum { get { return (Quantity * Price); } }
+        /// <summary>
+        /// Сумма с учетом скидки (в национальной валюте)
+        /// </summary>
+        public System.Double SumWithDiscount { get { return (Quantity * PriceWithDiscount); } }
+        /// <summary>
+        /// Цена отпускная (в валюте учета)
+        /// </summary>
+        public System.Double PriceInAccountingCurrency { get; set; }
+        /// <summary>
+        /// Цена отпускная с учетом скидки (в валюте учета)
+        /// </summary>
+        public System.Double PriceWithDiscountInAccountingCurrency { get; set; }
+        /// <summary>
+        /// Сумма без учета скидки (в валюте учета)
+        /// </summary>
+        public System.Double SumInAccountingCurrency { get { return (Quantity * PriceInAccountingCurrency); } }
+        /// <summary>
+        /// Сумма с учетом скидки (в валюте учета)
+        /// </summary>
+        public System.Double SumWithDiscountInAccountingCurrency { get { return (Quantity * PriceWithDiscountInAccountingCurrency); } }
+        #endregion
+
+        #region Конструктор
+        public CSrcBackWaybillItem()
+        {
+            this.WaybItemID = System.Guid.Empty;
+            this.WaybillNum = System.String.Empty;
+            this.WaybillDate = System.DateTime.MinValue;
+            this.Product = null;
+            this.Measure = null;
+            this.Quantity = 0;
+            this.LeavQuantity = 0;
+            this.Price = 0;
+            this.PriceImporter = 0;
+            this.NDSPercent = 0;
+            this.DiscountPercent = 0;
+            this.PriceWithDiscount = 0;
+            this.PriceInAccountingCurrency = 0;
+            this.PriceWithDiscountInAccountingCurrency = 0;
+        }
+        #endregion
+
+        #region Выпадающий список для оформления возврата
+        /// <summary>
+        /// Возвращает выпадающий список для оформления возврата
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Waybill_Guid">уи накладной</param>
+        /// <param name="Customer_Guid">уи накладной</param>
+        /// <param name="Stock_Guid">уи накладной</param>
+        /// <param name="PaymentType_Guid">уи накладной</param>
+        /// <param name="ShipDate_Begin">уи накладной</param>
+        /// <param name="ShipDate_End">уи накладной</param>
+        /// <param name="strErr">строка с сообщением об ошибке</param>
+        /// <returns>список позиций для возврата, как список объектов класса CSrcBackWaybillItem</returns>
+        public static List<CSrcBackWaybillItem> GetSrcBackWaybillItemList(UniXP.Common.CProfile objProfile,
+            System.Guid Waybill_Guid, 
+            System.Guid Customer_Guid,  System.Guid Stock_Guid,  System.Guid PaymentType_Guid, System.DateTime ShipDate_Begin, System.DateTime ShipDate_End,
+            ref System.String strErr)
+        {
+            List<CSrcBackWaybillItem> objList = new List<CSrcBackWaybillItem>();
+
+            try
+            {
+                System.Data.DataTable dtList = CBackWaybillDataBaseModel.GetTableSrcForBackWaybillItem( objProfile, null,
+                    Waybill_Guid, Customer_Guid, Stock_Guid, PaymentType_Guid, ShipDate_Begin, ShipDate_End, ref strErr );
+                if (dtList != null)
+                {
+                    CSrcBackWaybillItem objSrcBackWaybillItem = null;
+                    foreach (System.Data.DataRow objItem in dtList.Rows)
+                    {
+                        objSrcBackWaybillItem = new CSrcBackWaybillItem();
+
+
+                        objSrcBackWaybillItem.WaybItemID = ((objItem["WaybItem_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["WaybItem_Guid"] : System.Guid.Empty);
+                        objSrcBackWaybillItem.WaybillNum = ((objItem["Waybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Waybill_Num"]) : System.String.Empty);
+                        objSrcBackWaybillItem.WaybillDate = ((objItem["Waybill_BeginDate"] != System.DBNull.Value) ? System.Convert.ToDateTime(objItem["Waybill_BeginDate"]) : System.DateTime.MinValue);
+                        objSrcBackWaybillItem.Product = ((objItem["Parts_Guid"] != System.DBNull.Value) ? new CProduct()
+                        {
+                            ID = (System.Guid)objItem["Parts_Guid"],
+                            Name = System.Convert.ToString(objItem["PARTS_NAME"]),
+                            Article = System.Convert.ToString(objItem["PARTS_ARTICLE"]),
+                            ProductTradeMark = new CProductTradeMark() { ID = ((objItem["PartsOwner_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["PartsOwner_Guid"] : System.Guid.Empty) },
+                            ProductType = new CProductType() { ID = ((objItem["PartsPartType_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["PartsPartType_Guid"] : System.Guid.Empty) }
+                        } : null);
+
+                        objSrcBackWaybillItem.Measure = ((objItem["Measure_Guid"] != System.DBNull.Value) ? new CMeasure()
+                        {
+                            ID = (System.Guid)objItem["Measure_Guid"],
+                            ShortName = System.Convert.ToString(objItem["Measure_ShortName"])
+                        } : null);
+
+                        objSrcBackWaybillItem.Quantity = ((objItem["WaybItem_Quantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_Quantity"]) : 0);
+                        objSrcBackWaybillItem.LeavQuantity = ((objItem["WaybItem_LeavQuantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_LeavQuantity"]) : 0);
+
+                        objSrcBackWaybillItem.NDSPercent = ((objItem["WaybItem_NDSPercent"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_NDSPercent"]) : 0);
+                        objSrcBackWaybillItem.PriceImporter = ((objItem["WaybItem_PriceImporter"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_PriceImporter"]) : 0);
+                        objSrcBackWaybillItem.Price = ((objItem["WaybItem_Price"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_Price"]) : 0);
+                        objSrcBackWaybillItem.DiscountPercent = ((objItem["WaybItem_Discount"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_Discount"]) : 0);
+                        objSrcBackWaybillItem.PriceWithDiscount = ((objItem["WaybItem_DiscountPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_DiscountPrice"]) : 0);
+                        objSrcBackWaybillItem.PriceInAccountingCurrency = ((objItem["WaybItem_CurrencyPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_CurrencyPrice"]) : 0);
+                        objSrcBackWaybillItem.PriceWithDiscountInAccountingCurrency = ((objItem["WaybItem_CurrencyDiscountPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_CurrencyDiscountPrice"]) : 0);
+
+                        if (objSrcBackWaybillItem != null) { objList.Add(objSrcBackWaybillItem); }
+
+                    }
+                }
+
+                dtList = null;
+
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("\nНе удалось получить приложение к накладной на возврат товара.\nТекст ошибки: {0}", f.Message));
+            }
+            return objList;
+        }
+
+        #endregion
+    }
+
 
     #region Экспорт информации о накладной
     /// <summary>

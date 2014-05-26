@@ -825,7 +825,7 @@ namespace ERP_Mercury.Common
         }
         #endregion
 
-        #region Сохранение заказа в БД
+        #region Сохранение накладной в БД
         /// <summary>
         /// Добавляет в БД информацию о накладной
         /// </summary>
@@ -1130,6 +1130,7 @@ namespace ERP_Mercury.Common
 
 
         #endregion
+
 
     }
 }
