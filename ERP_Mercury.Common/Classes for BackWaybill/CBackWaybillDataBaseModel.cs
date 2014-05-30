@@ -70,9 +70,9 @@ namespace ERP_Mercury.Common
             dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybill_Num", typeof(System.String)));
             dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybill_BeginDate", typeof(System.DateTime)));
             dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybillParent_Guid", typeof(System.Guid)));
-            dtReturn.Columns.Add(new System.Data.DataColumn("WaybillState_Guid", typeof(System.Guid)));
-            dtReturn.Columns.Add(new System.Data.DataColumn("WaybillState_Id", typeof(System.Int32)));
-            dtReturn.Columns.Add(new System.Data.DataColumn("WaybillState_Name", typeof(System.String)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybillState_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybillState_Id", typeof(System.Int32)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("BackWaybillState_Name", typeof(System.String)));
             dtReturn.Columns.Add(new System.Data.DataColumn("WaybillBackReason_Guid", typeof(System.Guid)));
             dtReturn.Columns.Add(new System.Data.DataColumn("WaybillBackReason_Id", typeof(System.Int32)));
             dtReturn.Columns.Add(new System.Data.DataColumn("WaybillBackReason_Name", typeof(System.String)));
@@ -212,9 +212,9 @@ namespace ERP_Mercury.Common
 
                         newRow["BackWaybill_Num"] = rs["BackWaybill_Num"];
 
-                        newRow["WaybillState_Guid"] = rs["WaybillState_Guid"];
-                        newRow["WaybillState_Id"] = rs["WaybillState_Id"];
-                        newRow["WaybillState_Name"] = rs["WaybillState_Name"];
+                        newRow["BackWaybillState_Guid"] = rs["BackWaybillState_Guid"];
+                        newRow["BackWaybillState_Id"] = rs["BackWaybillState_Id"];
+                        newRow["BackWaybillState_Name"] = rs["BackWaybillState_Name"];
 
                         newRow["WaybillShipMode_Guid"] = rs["WaybillShipMode_Guid"];
                         newRow["WaybillShipMode_Id"] = rs["WaybillShipMode_Id"];
@@ -756,6 +756,169 @@ namespace ERP_Mercury.Common
 
 
         #endregion
+
+        #region Сохранение накладной в БД
+        /// <summary>
+        /// Добавляет в БД информацию о накладной
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="Waybill_Guid">УИ накладной на отгрузку</param>
+        /// <param name="Stock_Guid">УИ склада отгрузки</param>
+        /// <param name="Company_Guid">УИ компании</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Customer_Guid">УИ клиента</param>
+        /// <param name="CustomerChild_Guid">УИ дочернего клиента</param>
+        /// <param name="PaymentType_Guid">УИ формы оплаты</param>
+        /// <param name="WaybillBackReason_Guid">УИ причины возврата товара</param>
+        /// <param name="BackWaybill_Num">номер возвратной накладной</param>
+        /// <param name="BackWaybill_BeginDate">дата возвратной накладной</param>
+        /// <param name="BackWaybillParent_Guid">УИ родительской возвратной накладной</param>
+        /// <param name="BackWaybillState_Guid">УИ состояния возвратной накладной</param>
+        /// <param name="WaybillShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="BackWaybill_ShipDate">дата отгрузки возвратной накладной</param>
+        /// <param name="BackWaybill_Description">примечание</param>
+        /// <param name="BackWaybill_CurrencyRate">курс ценообразования</param>
+        /// <param name="WaybillTablePart">приложение к накладной (товары)</param>
+        /// <param name="BackWaybill_Guid">УИ возвратной накладной</param>
+        /// <param name="BackWaybill_Id">УИ возвратной накладной в InterBase</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean AddNewWaybillToDB(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid Waybill_Guid, System.Guid Stock_Guid, System.Guid Company_Guid, System.Guid Depart_Guid,
+            System.Guid Customer_Guid, System.Guid CustomerChild_Guid,
+            System.Guid PaymentType_Guid, System.Guid WaybillBackReason_Guid, System.String BackWaybill_Num,
+            System.DateTime BackWaybill_BeginDate, System.Guid BackWaybillParent_Guid,
+            System.Guid BackWaybillState_Guid, System.Guid WaybillShipMode_Guid, System.DateTime BackWaybill_ShipDate,
+            System.String BackWaybill_Description, System.Double BackWaybill_CurrencyRate, 
+            System.Data.DataTable WaybillTablePart,
+            ref System.Guid BackWaybill_Guid, ref System.Int32 BackWaybill_Id, ref System.String strErr )
+        {
+
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr = "Не удалось получить соединение с базой данных.";
+                        return bRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_AddBackWaybill]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_Guid", System.Data.SqlDbType.UniqueIdentifier, 4, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_Id", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+
+                if (BackWaybillState_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybillState_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                    cmd.Parameters["@BackWaybillState_Guid"].Value = BackWaybillState_Guid;
+                }
+                if (BackWaybillParent_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybillParent_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                    cmd.Parameters["@BackWaybillParent_Guid"].Value = BackWaybillParent_Guid;
+                }
+                if (CustomerChild_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@CustomerChild_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                    cmd.Parameters["@CustomerChild_Guid"].Value = CustomerChild_Guid;
+                }
+                if (System.DateTime.Compare(BackWaybill_ShipDate, System.DateTime.MinValue) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_ShipDate", System.Data.SqlDbType.Date));
+                    cmd.Parameters["@BackWaybill_ShipDate"].Value = BackWaybill_ShipDate;
+                }
+                if (Waybill_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                    cmd.Parameters["@Waybill_Guid"].Value = Waybill_Guid;
+                }
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_BeginDate", System.Data.SqlDbType.Date));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Depart_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Customer_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@WaybillShipMode_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PaymentType_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@WaybillBackReason_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_Description", System.Data.DbType.String));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_Num", System.Data.DbType.String));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Stock_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Company_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@BackWaybill_CurrencyRate", System.Data.SqlDbType.Money));
+
+                cmd.Parameters.AddWithValue("@tBackWaybItms", WaybillTablePart);
+                cmd.Parameters["@tBackWaybItms"].SqlDbType = System.Data.SqlDbType.Structured;
+                cmd.Parameters["@tBackWaybItms"].TypeName = "dbo.udt_BackWaybItms";
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+                cmd.Parameters["@Waybill_Guid"].Value = Waybill_Guid;
+                cmd.Parameters["@BackWaybill_BeginDate"].Value = BackWaybill_BeginDate;
+                cmd.Parameters["@Depart_Guid"].Value = Depart_Guid;
+                cmd.Parameters["@Customer_Guid"].Value = Customer_Guid;
+                cmd.Parameters["@WaybillShipMode_Guid"].Value = WaybillShipMode_Guid;
+                cmd.Parameters["@PaymentType_Guid"].Value = PaymentType_Guid;
+                cmd.Parameters["@WaybillBackReason_Guid"].Value = WaybillBackReason_Guid;
+                cmd.Parameters["@BackWaybill_Description"].Value = BackWaybill_Description;
+                cmd.Parameters["@BackWaybill_Num"].Value = BackWaybill_Num;
+                cmd.Parameters["@Stock_Guid"].Value = Stock_Guid;
+                cmd.Parameters["@Company_Guid"].Value = Company_Guid;
+                cmd.Parameters["@BackWaybill_CurrencyRate"].Value = BackWaybill_CurrencyRate;
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    BackWaybill_Guid = (System.Guid)cmd.Parameters["@BackWaybill_Guid"].Value;
+                    BackWaybill_Id = (System.Int32)cmd.Parameters["@BackWaybill_Id"].Value;
+                    
+                    strErr = "Накладная успешно сохранена.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
+        #endregion
+
 
     }
 }

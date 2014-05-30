@@ -393,7 +393,7 @@ namespace ERP_Mercury.Common
             Depart = null;
             Stock = null;
             Company = null;
-            WaybillState = null;
+            BackWaybillState = null;
             WaybillBackReason = null;
             PaymentType = null;
             Currency = null;
@@ -532,13 +532,13 @@ namespace ERP_Mercury.Common
         /// <summary>
         /// Состояние накладной
         /// </summary>
-        public CWaybillState WaybillState { get; set; }
+        public CBackWaybillState BackWaybillState { get; set; }
         /// <summary>
         /// Состояние накладной
         /// </summary>
-        public System.String WaybillStateName
+        public System.String BackWaybillStateName
         {
-            get { return ((WaybillState == null) ? System.String.Empty : WaybillState.Name); }
+            get { return ((BackWaybillState == null) ? System.String.Empty : BackWaybillState.Name); }
         }
         #endregion
 
@@ -735,11 +735,11 @@ namespace ERP_Mercury.Common
                         }
                         objWaybill.DocNum = ((objItem["BackWaybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["BackWaybill_Num"]) : System.String.Empty);
 
-                        objWaybill.WaybillState = ((objItem["WaybillState_Guid"] != System.DBNull.Value) ? new CWaybillState()
+                        objWaybill.BackWaybillState = ((objItem["BackWaybillState_Guid"] != System.DBNull.Value) ? new CBackWaybillState()
                         {
-                            ID = (System.Guid)objItem["WaybillState_Guid"],
-                            WaybillStateId = System.Convert.ToInt32(objItem["WaybillState_Id"]),
-                            Name = System.Convert.ToString(objItem["WaybillState_Name"])
+                            ID = (System.Guid)objItem["BackWaybillState_Guid"],
+                            BackWaybillStateId = System.Convert.ToInt32(objItem["BackWaybillState_Id"]),
+                            Name = System.Convert.ToString(objItem["BackWaybillState_Name"])
                         } : null);
 
                         objWaybill.WaybillShipMode = ((objItem["WaybillShipMode_Guid"] != System.DBNull.Value) ? new CWaybillShipMode()
@@ -830,6 +830,160 @@ namespace ERP_Mercury.Common
             return CBackWaybillDataBaseModel.CanCreateBackWaybillFromSuppl(objProfile, Waybill_Guid, ref strErr);
         }
         #endregion
+
+        #region Создание новой накладной
+        /// <summary>
+        /// Проверка заполнения обязательных параметров
+        /// </summary>
+        /// <param name="Stock_Guid">УИ склада отгрузки</param>
+        /// <param name="Company_Guid">УИ компании</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Customer_Guid">УИ клиента</param>
+        /// <param name="PaymentType_Guid">УИ формы оплаты</param>
+        /// <param name="WaybillBackReason_Guid">УИ причины возврата твоара</param>
+        /// <param name="BackWaybillState_Guid">УИ состояния возвратной накладной</param>
+        /// <param name="Waybill_Num">номер накладной</param>
+        /// <param name="Waybill_BeginDate">дата накладной</param>
+        /// <param name="Waybill_DeliveryDate">дата доставки</param>
+        /// <param name="WaybillShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="WaybillTablePart">приложение к накладной (товары)</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - значения всех полей удовлетворяют требованиям; false - проверка не пройдена</returns>
+        public static System.Boolean CheckAllPropertiesForSave(
+            System.Guid Stock_Guid, System.Guid Company_Guid, System.Guid Depart_Guid,
+            System.Guid Customer_Guid, 
+            System.Guid PaymentType_Guid, System.Guid WaybillBackReason_Guid, System.Guid BackWaybillState_Guid, 
+            System.String Waybill_Num,  System.DateTime Waybill_BeginDate, 
+            System.Guid WaybillShipMode_Guid,
+            System.Data.DataTable WaybillTablePart, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                if (Waybill_BeginDate == System.DateTime.MinValue)
+                {
+                    strErr = "Укажите, пожалуйста, дату накладной.";
+                    return bRet;
+                }
+                if (Depart_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, подразделение.";
+                    return bRet;
+                }
+                if (Stock_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, склад отгрузки.";
+                    return bRet;
+                }
+                if (Company_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, компанию.";
+                    return bRet;
+                }
+                if (Customer_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, клиента.";
+                    return bRet;
+                }
+                if (PaymentType_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, форму оплаты.";
+                    return bRet;
+                }
+                if (WaybillBackReason_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, причину возврата.";
+                    return bRet;
+                }
+                if (WaybillShipMode_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, вид отгрузки.";
+                    return bRet;
+                }
+                if (Waybill_Num.Trim().Length == 0)
+                {
+                    strErr = "Укажите, пожалуйста, номер накладной.";
+                    return bRet;
+                }
+                if ((WaybillTablePart == null) || (WaybillTablePart.Rows.Count == 0))
+                {
+                    strErr = "Приложение к накладной не содержит записей. Добавьте, пожалуйста, хотя бы одну позицию.";
+                    return bRet;
+                }
+
+                bRet = true;
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "CheckAllPropertiesForSave.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+            }
+
+            return bRet;
+        }
+        /// <summary>
+        /// Сохраняет новую накладную
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Waybill_Guid">УИ накладной на отгрузку</param>
+        /// <param name="Stock_Guid">УИ склада отгрузки</param>
+        /// <param name="Company_Guid">УИ компании</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Customer_Guid">УИ клиента</param>
+        /// <param name="CustomerChild_Guid">УИ дочернего клиента</param>
+        /// <param name="PaymentType_Guid">УИ формы оплаты</param>
+        /// <param name="WaybillBackReason_Guid">УИ причины возврата товара</param>
+        /// <param name="BackWaybill_Num">номер возвратной накладной</param>
+        /// <param name="BackWaybill_BeginDate">дата возвратной накладной</param>
+        /// <param name="BackWaybillParent_Guid">УИ родительской возвратной накладной</param>
+        /// <param name="BackWaybillState_Guid">УИ состояния возвратной накладной</param>
+        /// <param name="WaybillShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="BackWaybill_ShipDate">дата отгрузки возвратной накладной</param>
+        /// <param name="BackWaybill_Description">примечание</param>
+        /// <param name="BackWaybill_CurrencyRate">курс ценообразования</param>
+        /// <param name="WaybillTablePart">приложение к накладной (товары)</param>
+        /// <param name="BackWaybill_Guid">УИ возвратной накладной</param>
+        /// <param name="BackWaybill_Id">УИ возвратной накладной в InterBase</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean AddNewWaybillToDB(UniXP.Common.CProfile objProfile,  
+            System.Guid Waybill_Guid, System.Guid Stock_Guid, System.Guid Company_Guid, System.Guid Depart_Guid,
+            System.Guid Customer_Guid, System.Guid CustomerChild_Guid,
+            System.Guid PaymentType_Guid, System.Guid WaybillBackReason_Guid, System.String BackWaybill_Num,
+            System.DateTime BackWaybill_BeginDate, System.Guid BackWaybillParent_Guid,
+            System.Guid BackWaybillState_Guid, System.Guid WaybillShipMode_Guid, System.DateTime BackWaybill_ShipDate,
+            System.String BackWaybill_Description, System.Double BackWaybill_CurrencyRate,
+            System.Data.DataTable WaybillTablePart,
+            ref System.Guid BackWaybill_Guid, ref System.Int32 BackWaybill_Id, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CBackWaybillDataBaseModel.AddNewWaybillToDB(objProfile, null,
+                    Waybill_Guid, Stock_Guid, Company_Guid, Depart_Guid,
+                    Customer_Guid, CustomerChild_Guid, PaymentType_Guid, 
+                    WaybillBackReason_Guid, BackWaybill_Num, BackWaybill_BeginDate, BackWaybillParent_Guid,
+                    BackWaybillState_Guid, WaybillShipMode_Guid, BackWaybill_ShipDate,
+                    BackWaybill_Description, BackWaybill_CurrencyRate, WaybillTablePart,
+                    ref BackWaybill_Guid, ref BackWaybill_Id, ref strErr);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+        }
+
+
+        #endregion
+
 
     }
 
