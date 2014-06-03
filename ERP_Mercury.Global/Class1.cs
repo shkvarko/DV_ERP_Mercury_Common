@@ -38,14 +38,5 @@ namespace ERP_Mercury.Global
         public static readonly System.String strDR_ViewEarningPayForm2 = "Доступ к оплатам по ф2 на просмотр";
         public static readonly System.String strCustomerNotIndefined = "-- плательщик не опознан --";
 
-        public static readonly System.String strDR_ViewTTNPayForm1 = "ТТН ф1 просмотр";
-        public static readonly System.String strDR_ViewTTNPayForm2 = "ТТН ф2 просмотр";
-        public static readonly System.String strDR_EditTTNPayForm1 = "ТТН ф1 редактировать";
-        public static readonly System.String strDR_EditTTNPayForm2 = "ТТН ф2 редактировать";
-        public static readonly System.String strDR_PrintTTNPayForm1 = "ТТН ф1 печать";
-        public static readonly System.String strDR_PrintTTNPayForm2 = "ТТН ф2 печать";
-        public static readonly System.String strDR_MoveSupplToTTNPayForm1 = "Заказ ф1 перевод в ТТН";
-        public static readonly System.String strDR_MoveSupplToTTNPayForm2 = "Заказ ф2 перевод в ТТН";
-
     }
 }

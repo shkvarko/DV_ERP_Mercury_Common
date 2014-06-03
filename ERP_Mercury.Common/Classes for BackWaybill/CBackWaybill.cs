@@ -984,7 +984,65 @@ namespace ERP_Mercury.Common
 
         #endregion
 
+        #region Постановка возвратной накладной на приход
+        /// <summary>
+        /// Постановка товара на приход по возвратной накладной
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="BackWaybill_Guid">УИ накладной на возврат</param>
+        /// <param name="BackWaybill_ShipDate">дата отгрузки</param>
+        /// <param name="BackWaybillState_Guid">УИ текукщего состояния возвратно накладной</param>
+        /// <param name="strErr">сообщение об ошибке</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean SetBackWaybillToStock(UniXP.Common.CProfile objProfile, 
+            System.Guid BackWaybill_Guid, System.DateTime BackWaybill_ShipDate,
+            ref System.Guid BackWaybillState_Guid, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CBackWaybillDataBaseModel.SetBackWaybillToStock(objProfile, null,
+                    BackWaybill_Guid, BackWaybill_ShipDate, ref BackWaybillState_Guid, ref strErr);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+        }
+        #endregion
 
+        #region Аннулирование накладной на возврат товара
+        /// <summary>
+        /// Аннулирование накладной на возврат товара
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="BackWaybill_Guid">УИ накладной на возврат товара</param>
+        /// <param name="BackWaybillState_Guid">УИ состояния накладной на возврат товара</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean DeleteBackWaybill(UniXP.Common.CProfile objProfile, 
+            System.Guid BackWaybill_Guid, ref System.Guid BackWaybillState_Guid, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CBackWaybillDataBaseModel.DeleteBackWaybill(objProfile, null,
+                    BackWaybill_Guid, ref BackWaybillState_Guid, ref strErr);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+        }
+        #endregion
     }
 
     /// <summary>
