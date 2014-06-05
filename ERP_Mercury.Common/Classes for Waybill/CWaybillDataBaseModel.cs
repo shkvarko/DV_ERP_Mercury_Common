@@ -1131,6 +1131,140 @@ namespace ERP_Mercury.Common
 
         #endregion
 
+        #region Проверка, можно ли аннулировать накладную
+        /// <summary>
+        /// Проверка, можно ли аннулировать накладную
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Waybill_Guid">УИ накладной</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - можно; false - нельзя</returns>
+        public static System.Boolean CanCancelWaybill(UniXP.Common.CProfile objProfile,
+            System.Guid Waybill_Guid, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                DBConnection = objProfile.GetDBSource();
+                if (DBConnection == null)
+                {
+                    strErr += ("\nНе удалось получить соединение с базой данных.");
+                    return bRet;
+                }
+                cmd = new System.Data.SqlClient.SqlCommand();
+                cmd.Connection = DBConnection;
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_CanCancelWaybill]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@CanCancelWaybill", System.Data.SqlDbType.Bit) { Direction = System.Data.ParameterDirection.Output });
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters["@Waybill_Guid"].Value = Waybill_Guid;
+                cmd.ExecuteNonQuery();
+
+                System.Int32 iRet = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+                strErr = (System.String)cmd.Parameters["@ERROR_MES"].Value;
+                bRet = (System.Boolean)cmd.Parameters["@CanCancelWaybill"].Value;
+
+                cmd.Dispose();
+                DBConnection.Close();
+            }
+            catch (System.Exception f)
+            {
+                strErr = "CanCancelWaybill.\n\nТекст ошибки: " + f.Message;
+            }
+            return bRet;
+        }
+        #endregion
+
+        #region Аннулирование накладной
+        /// <summary>
+        /// Аннулирование накладной
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="Waybill_Guid">УИ накладной</param>
+        /// <param name="WaybillState_Guid">УИ состояния накладной</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean CancelWaybill(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid Waybill_Guid, ref System.Guid WaybillState_Guid, ref System.String strErr)
+        {
+
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr = "Не удалось получить соединение с базой данных.";
+                        return bRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_CancelWaybill]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@WaybillState_Guid", System.Data.SqlDbType.UniqueIdentifier) { Direction = System.Data.ParameterDirection.Output });
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters["@Waybill_Guid"].Value = Waybill_Guid;
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    WaybillState_Guid = (System.Guid)cmd.Parameters["@WaybillState_Guid"].Value;
+
+                    strErr = "Накладная аннулирована.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
+        #endregion
 
     }
 }

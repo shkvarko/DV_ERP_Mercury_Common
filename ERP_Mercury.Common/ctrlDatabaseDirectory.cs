@@ -95,7 +95,9 @@ namespace ERP_Mercury.Common
         LotState = 75, 
         EarningType = 76, 
         WaybillState = 77,
-        WaybillShipMode = 78
+        WaybillShipMode = 78,
+        BackWaybillState = 79,
+        WaybillBackReason = 80
     }
 
     public partial class ctrlDatabaseDirectory : UserControl
@@ -1356,6 +1358,33 @@ namespace ERP_Mercury.Common
                             break;
 
                         }
+                    case EnumDirectSimple.BackWaybillState:
+                        {
+                            // состояние накладной на возврат товара
+                            List<CBackWaybillState> objList = CBackWaybillState.GetBackWaybillStateList( m_objProfile, ref strErr );
+                            if (objList != null)
+                            {
+                                foreach (CBackWaybillState objItem in objList)
+                                {
+                                    treeList.AppendNode(new object[] { objItem.Name }, null).Tag = objItem;
+                                }
+                            }
+                            break;
+                        }
+                    case EnumDirectSimple.WaybillBackReason:
+                        {
+                            // причина возврата товара
+                            List<CWaybillBackReason> objList = CWaybillBackReason.GetWaybillBackReasonList( m_objProfile, ref strErr );
+                            if (objList != null)
+                            {
+                                foreach (CWaybillBackReason objItem in objList)
+                                {
+                                    treeList.AppendNode(new object[] { objItem.Name }, null).Tag = objItem;
+                                }
+                            }
+                            break;
+
+                        }
 
                     default:
                         break;
@@ -2303,6 +2332,30 @@ namespace ERP_Mercury.Common
                         {
                             // вид оплаты
                             objNewNode.Tag = new CEarningType();
+                            break;
+                        }
+                    case EnumDirectSimple.WaybillShipMode:
+                        {
+                            // вид отгрузки
+                            objNewNode.Tag = new CWaybillShipMode();
+                            break;
+                        }
+                    case EnumDirectSimple.WaybillState:
+                        {
+                            // состояние накладной
+                            objNewNode.Tag = new CWaybillState();
+                            break;
+                        }
+                    case EnumDirectSimple.BackWaybillState:
+                        {
+                            // состояние накладной на возврат товара
+                            objNewNode.Tag = new CBackWaybillState();
+                            break;
+                        }
+                    case EnumDirectSimple.WaybillBackReason:
+                        {
+                            // причина возврата товара
+                            objNewNode.Tag = new CWaybillBackReason();
                             break;
                         }
                     default:

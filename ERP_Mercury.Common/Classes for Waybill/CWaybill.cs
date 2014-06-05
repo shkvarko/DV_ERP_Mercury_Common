@@ -354,6 +354,36 @@ namespace ERP_Mercury.Common
     /// </summary>
     public class CWaybill
     {
+        #region Конструктор
+        public CWaybill()
+        {
+            ID = System.Guid.Empty;
+            Ib_ID = 0;
+            ParentID = System.Guid.Empty;
+            SupplID = System.Guid.Empty;
+            DocNum = System.String.Empty;
+            BeginDate = System.DateTime.MinValue;
+            WaybillShipMode = null;
+            Customer = null;
+            ChildDepart = null;
+            SalesMan = null;
+            Depart = null;
+            Stock = null;
+            Company = null;
+            WaybillState = null;
+            PaymentType = null;
+            Currency = null;
+            Description = System.String.Empty;
+            WaybillItemList = null;
+            Quantity = 0;
+            PricingCurrencyRate = 0;
+            SumWaybill = 0;
+            SumDiscount = 0;
+            SumWaybillInAccountingCurrency = 0;
+            SumDiscountInAccountingCurrency = 0;
+        }
+        #endregion
+
         #region Уникальные идентификаторы
         /// <summary>
         /// Уникальный идентификатор накладной
@@ -1304,6 +1334,50 @@ namespace ERP_Mercury.Common
             return bRet;
         }
 
+        #endregion
+
+        #region Проверка, можно ли аннулировать накладную
+        /// <summary>
+        /// Проверка, можно ли аннулировать накладную
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Waybill_Guid">УИ накладной</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - можно; false - нельзя</returns>
+        public static System.Boolean CanCancelWaybill(UniXP.Common.CProfile objProfile,
+            System.Guid Waybill_Guid, ref System.String strErr)
+        {
+            return CWaybillDataBaseModel.CanCancelWaybill(objProfile, Waybill_Guid, ref strErr);
+        }
+        #endregion
+
+        #region Аннулирование накладной
+        /// <summary>
+        /// Аннулирование накладной
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Waybill_Guid">УИ накладной</param>
+        /// <param name="WaybillState_Guid">УИ состояния накладной</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean CancelWaybill(UniXP.Common.CProfile objProfile,
+            System.Guid Waybill_Guid, ref System.Guid WaybillState_Guid, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CWaybillDataBaseModel.CancelWaybill(objProfile, null,
+                    Waybill_Guid, ref WaybillState_Guid, ref strErr);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+        }
         #endregion
 
     }
