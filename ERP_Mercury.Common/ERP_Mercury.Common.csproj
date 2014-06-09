@@ -135,6 +135,10 @@
     <Compile Include="Classes for BackWaybill\CBackWaybillDataBaseModel.cs" />
     <Compile Include="Classes for BackWaybill\CBackWaybillState.cs" />
     <Compile Include="Classes for BackWaybill\CWaybillBackReason.cs" />
+    <Compile Include="Classes for IntWaybill\CIntWaybill.cs" />
+    <Compile Include="Classes for IntWaybill\CIntWaybillDataBaseModel.cs" />
+    <Compile Include="Classes for IntWaybill\CIntWaybillState.cs" />
+    <Compile Include="Classes for Waybill\CShipmentProducts.cs" />
     <Compile Include="Classes for Waybill\CWaybillDataBaseModel.cs" />
     <Compile Include="Classes for Waybill\CWaybillShipMode.cs" />
     <Compile Include="Classes for Waybill\CWaybillState.cs" />
