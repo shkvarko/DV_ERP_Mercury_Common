@@ -23,13 +23,15 @@ namespace ERP_Mercury.Common
         /// <param name="uuidPaymentTypeId">УИ формы оплаты</param>
         /// <param name="strErr">текст ошибки</param>
         /// <param name="SelectWaybillInfoFromSuppl">признак "информация для накладной запрашивается из заказа"</param>
+        /// <param name="OnlyUnShippedWaybills">признак "только не отгруженные накладные"</param>
         /// <returns>таблицу</returns>
         public static System.Data.DataTable GetWaybillTable(UniXP.Common.CProfile objProfile,
             System.Data.SqlClient.SqlCommand cmdSQL, System.Guid Waybill_Guid,
             System.DateTime dtBeginDate, System.DateTime dtEndDate,
             System.Guid uuidCompanyId, System.Guid uuidStockId,
             System.Guid uuidPaymentTypeId, System.Guid uuidCustomerId,
-            ref System.String strErr, System.Boolean SelectWaybillInfoFromSuppl = false)
+            ref System.String strErr, System.Boolean SelectWaybillInfoFromSuppl = false, 
+            System.Boolean OnlyUnShippedWaybills = false)
         {
             System.Data.DataTable dtReturn = new System.Data.DataTable();
 
@@ -152,6 +154,9 @@ namespace ERP_Mercury.Common
                         cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_CustomerGuid", System.Data.DbType.Guid));
                         cmd.Parameters["@Waybill_CustomerGuid"].Value = uuidCustomerId;
                     }
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@OnlyUnShippedWaybills", System.Data.SqlDbType.Bit));
+                    cmd.Parameters["@OnlyUnShippedWaybills"].Value = OnlyUnShippedWaybills;
+                    
                 }
                 else
                 {

@@ -410,6 +410,10 @@ namespace ERP_Mercury.Common
         /// </summary>
         public System.String DocNum { get; set; }
         /// <summary>
+        /// Номер розничной накладной
+        /// </summary>
+        public System.String RetailDocNum { get; set; }
+        /// <summary>
         /// Дата создания накладной
         /// </summary>
         public System.DateTime BeginDate { get; set; }
@@ -423,7 +427,7 @@ namespace ERP_Mercury.Common
         /// <summary>
         /// Вид отгрузки накладной
         /// </summary>
-        public CWaybillShipMode WaybillShipMode { get; set; }
+        public CIntWaybillShipMode WaybillShipMode { get; set; }
         /// <summary>
         /// Вид отгрузки накладной
         /// </summary>
@@ -519,6 +523,20 @@ namespace ERP_Mercury.Common
         }
         #endregion
 
+        #region Форма оплаты
+        /// <summary>
+        /// Форма оплаты
+        /// </summary>
+        public CPaymentType PaymentType { get; set; }
+        /// <summary>
+        /// Наименование формы оплаты
+        /// </summary>
+        public System.String PaymentTypeName
+        {
+            get { return ((PaymentType == null) ? System.String.Empty : PaymentType.Name); }
+        }
+        #endregion
+
         #region Итоговые суммы, количество, вес
         /// <summary>
         /// Количество проданное
@@ -555,6 +573,10 @@ namespace ERP_Mercury.Common
         /// </summary>
         public System.Double SumWaybill { get; set; }
         /// <summary>
+        /// Сумма розничной накладной
+        /// </summary>
+        public System.Double SumRetail { get; set; }
+        /// <summary>
         /// Сумма накладной без учета скидки (в национальной валюте) с учетом возврата
         /// </summary>
         public System.Double SumWaybillWithReturn { get; set; }
@@ -589,6 +611,8 @@ namespace ERP_Mercury.Common
         /// Примечание
         /// </summary>
         public System.String Description { get; set; }
+        public System.Boolean IsForStock { get; set; }
+        public System.Boolean IsSend { get; set; }
         #endregion
 
         #region Табличная часть
@@ -606,6 +630,7 @@ namespace ERP_Mercury.Common
             ParentID = System.Guid.Empty;
             IntOrderID = System.Guid.Empty;
             DocNum = System.String.Empty;
+            RetailDocNum = System.String.Empty; 
             BeginDate = System.DateTime.MinValue;
             WaybillShipMode = null;
             SalesMan = null;
@@ -615,13 +640,17 @@ namespace ERP_Mercury.Common
             StockDst = null;
             CompanyDst = null;
             DocState = null;
+            PaymentType = null;
             Currency = null;
             Description = System.String.Empty;
+            IsForStock = false;
+            IsSend = false;
             WaybillItemList = null;
             Quantity = 0;
             QuantityReturn = 0;
             PricingCurrencyRate = 0;
             SumWaybill = 0;
+            SumRetail = 0;
             SumWaybillWithReturn = 0;
             SumDiscount = 0;
             SumWaybillInAccountingCurrency = 0;
@@ -629,5 +658,185 @@ namespace ERP_Mercury.Common
 
         }
         #endregion
+
+        #region Журнал накладных
+        /// <summary>
+        /// Возвращает список накладных за указанный период
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="IntWaybill_Guid">УИ документа</param>
+        /// <param name="IntWaybill_DateBegin">начало периода для выборки</param>
+        /// <param name="IntWaybill_DateEnd">конец периода для выборки</param>
+        /// <param name="IntWaybill_SrcCompanyGuid">УИ компании "Откуда"</param>
+        /// <param name="IntWaybill_SrcStockGuid">УИ склада "Откуда"<</param>
+        /// <param name="IntWaybill_DstCompanyGuid">УИ компании "Куда"</param>
+        /// <param name="IntWaybill_DstStockGuid">УИ склада "Куда"<</param>
+        /// <param name="Waybill_PaymentTypeGuid">УИ формы оплаты</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <param name="SelectIntWaybillInfoFromIntOrder">признак "информация для накладной запрашивается из заказа"</param>
+        /// <param name="OnlyUnShippedWaybills">признак "запрос только НЕ отгруженных накладных"</param>
+        /// <returns>список объектов класса "CIntWaybill"</returns>
+        public static List<CIntWaybill> GetWaybillList(UniXP.Common.CProfile objProfile,
+            System.Guid IntWaybill_Guid,
+            System.DateTime IntWaybill_DateBegin, System.DateTime IntWaybill_DateEnd,
+            System.Guid IntWaybill_SrcCompanyGuid, System.Guid IntWaybill_SrcStockGuid,
+            System.Guid IntWaybill_DstCompanyGuid, System.Guid IntWaybill_DstStockGuid,
+            System.Guid Waybill_PaymentTypeGuid, ref System.String strErr,
+            System.Boolean SelectIntWaybillInfoFromIntOrder = false,
+            System.Boolean OnlyUnShippedWaybills = false
+            )
+        {
+            List<CIntWaybill> objList = new List<CIntWaybill>();
+
+            try
+            {
+                // вызов статического метода из класса, связанного с БД
+                System.Data.DataTable dtList = CIntWaybillDataBaseModel.GetWaybillTable(objProfile, null, IntWaybill_Guid,
+                    IntWaybill_DateBegin, IntWaybill_DateEnd, IntWaybill_SrcCompanyGuid, IntWaybill_SrcStockGuid,
+                    IntWaybill_DstCompanyGuid, IntWaybill_DstStockGuid,
+                    Waybill_PaymentTypeGuid, ref strErr,
+                    SelectIntWaybillInfoFromIntOrder,  OnlyUnShippedWaybills);
+                if (dtList != null)
+                {
+                    CIntWaybill objWaybill = null;
+                    System.Int32 objWaybill_Ib_ID = 0;
+                    foreach (System.Data.DataRow objItem in dtList.Rows)
+                    {
+                        objWaybill = new CIntWaybill();
+                        objWaybill_Ib_ID = System.Convert.ToInt32(objItem["IntWaybill_Id"]);
+                        objWaybill.ID = ((objItem["IntWaybill_Guid"] != System.DBNull.Value) ? new System.Guid(System.Convert.ToString(objItem["IntWaybill_Guid"])) : System.Guid.Empty);
+                        objWaybill.ParentID = ((objItem["IntWaybillParent_Guid"] != System.DBNull.Value) ? new System.Guid(System.Convert.ToString(objItem["IntWaybillParent_Guid"])) : System.Guid.Empty);
+                        objWaybill.IntOrderID = ((objItem["IntOrder_Guid"] != System.DBNull.Value) ? new System.Guid(System.Convert.ToString(objItem["IntOrder_Guid"])) : System.Guid.Empty);
+                        objWaybill.StockSrc = ((objItem["SrcStock_Guid"] != System.DBNull.Value) ? new CStock()
+                        {
+                            ID = (System.Guid)objItem["SrcStock_Guid"],
+                            IBId = System.Convert.ToInt32(objItem["SrcStock_Id"]),
+                            Name = System.Convert.ToString(objItem["SrcStock_Name"]),
+                            IsAcitve = System.Convert.ToBoolean(objItem["SrcStock_IsActive"]),
+                            IsTrade = System.Convert.ToBoolean(objItem["SrcStock_IsTrade"]),
+                            WareHouse = new CWarehouse() { ID = (System.Guid)objItem["SrcWarehouse_Guid"] },
+                            WareHouseType = new CWareHouseType() { ID = (System.Guid)objItem["SrcWarehouseType_Guid"] }
+                        } : null);
+                        objWaybill.CompanySrc = ((objItem["SrcCompany_Guid"] != System.DBNull.Value) ? new CCompany()
+                        {
+                            ID = (System.Guid)objItem["SrcCompany_Guid"],
+                            InterBaseID = System.Convert.ToInt32(objItem["SrcCompany_Id"]),
+                            Abbr = System.Convert.ToString(objItem["SrcCompany_Acronym"]),
+                            Name = System.Convert.ToString(objItem["SrcCompany_Name"])
+                        } : null);
+                        objWaybill.StockDst = ((objItem["DstStock_Guid"] != System.DBNull.Value) ? new CStock()
+                        {
+                            ID = (System.Guid)objItem["DstStock_Guid"],
+                            IBId = System.Convert.ToInt32(objItem["DstStock_Id"]),
+                            Name = System.Convert.ToString(objItem["DstStock_Name"]),
+                            IsAcitve = System.Convert.ToBoolean(objItem["DstStock_IsActive"]),
+                            IsTrade = System.Convert.ToBoolean(objItem["DstStock_IsTrade"]),
+                            WareHouse = new CWarehouse() { ID = (System.Guid)objItem["DstWarehouse_Guid"] },
+                            WareHouseType = new CWareHouseType() { ID = (System.Guid)objItem["DstWarehouseType_Guid"] }
+                        } : null);
+                        objWaybill.CompanyDst = ((objItem["DstCompany_Guid"] != System.DBNull.Value) ? new CCompany()
+                        {
+                            ID = (System.Guid)objItem["DstCompany_Guid"],
+                            InterBaseID = System.Convert.ToInt32(objItem["DstCompany_Id"]),
+                            Abbr = System.Convert.ToString(objItem["DstCompany_Acronym"]),
+                            Name = System.Convert.ToString(objItem["DstCompany_Name"])
+                        } : null);
+
+                        objWaybill.Currency = ((objItem["Currency_Guid"] != System.DBNull.Value) ? new CCurrency()
+                        {
+                            ID = (System.Guid)objItem["Currency_Guid"],
+                            CurrencyAbbr = System.Convert.ToString(objItem["Currency_Abbr"])
+                        } : null);
+
+                        objWaybill.Depart = ((objItem["Depart_Guid"] != System.DBNull.Value) ? new CDepart()
+                        {
+                            uuidID = (System.Guid)objItem["Depart_Guid"],
+                            DepartCode = System.Convert.ToString(objItem["Depart_Code"])
+                        } : null);
+
+
+                        objWaybill.PaymentType = ((objItem["PaymentType_Guid"] != System.DBNull.Value) ? new CPaymentType(
+                            (System.Guid)objItem["PaymentType_Guid"], System.Convert.ToString(objItem["PaymentType_Name"])) : null);
+
+                        objWaybill.BeginDate = ((objItem["IntWaybill_BeginDate"] != System.DBNull.Value) ? System.Convert.ToDateTime(objItem["IntWaybill_BeginDate"]) : System.DateTime.MinValue);
+                        if (objItem["IntWaybill_ShipDate"] != System.DBNull.Value)
+                        {
+                            objWaybill.ShipDate = System.Convert.ToDateTime(objItem["IntWaybill_ShipDate"]);
+                        }
+                        objWaybill.DocNum = ((objItem["IntWaybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["IntWaybill_Num"]) : System.String.Empty);
+                        objWaybill.RetailDocNum = ((objItem["RetailWaybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["RetailWaybill_Num"]) : System.String.Empty);
+
+                        objWaybill.DocState = ((objItem["IntWaybillState_Guid"] != System.DBNull.Value) ? new CIntWaybillState()
+                        {
+                            ID = (System.Guid)objItem["IntWaybillState_Guid"],
+                            IntWaybillStateId = System.Convert.ToInt32(objItem["IntWaybillState_Id"]),
+                            Name = System.Convert.ToString(objItem["IntWaybillState_Name"])
+                        } : null);
+
+                        objWaybill.WaybillShipMode = ((objItem["IntWaybillShipMode_Guid"] != System.DBNull.Value) ? new CIntWaybillShipMode()
+                        {
+                            ID = (System.Guid)objItem["IntWaybillShipMode_Guid"],
+                            WaybillShipModeId = System.Convert.ToInt32(objItem["IntWaybillShipMode_Id"]),
+                            Name = System.Convert.ToString(objItem["IntWaybillShipMode_Name"])
+                        } : null);
+
+                        objWaybill.Description = ((objItem["IntWaybill_Description"] != System.DBNull.Value) ? System.Convert.ToString(objItem["IntWaybill_Description"]) : System.String.Empty);
+                        objWaybill.IsForStock = ((objItem["IntWaybill_ForStock"] != System.DBNull.Value) ? System.Convert.ToBoolean(objItem["IntWaybill_ForStock"]) : false);
+                        objWaybill.IsSend = ((objItem["IntWaybill_Send"] != System.DBNull.Value) ? System.Convert.ToBoolean(objItem["IntWaybill_Send"]) : false);
+
+                        objWaybill.SumWaybill = ((objItem["IntWaybill_AllPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybill_AllPrice"]) : 0);
+                        objWaybill.SumDiscount = 0; // ((objItem["IntWaybill_AllDiscount"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybill_AllDiscount"]) : 0);
+                        objWaybill.SumRetail = ((objItem["IntWaybill_RetailAllPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybill_RetailAllPrice"]) : 0);
+
+                        objWaybill.Quantity = ((objItem["IntWaybill_Quantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybill_Quantity"]) : 0);
+
+                        if (objWaybill != null) { objList.Add(objWaybill); }
+
+                    }
+                }
+
+                dtList = null;
+
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("\nНе удалось получить список накладных.\nТекст ошибки: {0}", f.Message));
+            }
+            return objList;
+        }
+        /// <summary>
+        /// Возвращает объект класса "Накладная на внутреннее перемещение"
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Waybill_Guid">УИ накладной</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>объект класса "Накладная"</returns>
+        public static CIntWaybill GetWaybill(UniXP.Common.CProfile objProfile, System.Guid IntWaybill_Guid,
+            ref System.String strErr)
+        {
+            CIntWaybill objWaybill = null;
+
+            try
+            {
+                // вызов статического метода из класса, связанного с БД
+                List<CIntWaybill> objList = CIntWaybill.GetWaybillList(objProfile, IntWaybill_Guid, System.DateTime.MinValue, System.DateTime.MinValue,
+                    System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, ref strErr, false, false);
+                if ((objList != null) && (objList.Count > 0))
+                {
+                    objWaybill = objList[0];
+                }
+
+                objList = null;
+
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("\nНе удалось получить информацию о накладной.\nТекст ошибки: {0}", f.Message));
+            }
+            return objWaybill;
+        }
+
+        #endregion
+
     }
 }

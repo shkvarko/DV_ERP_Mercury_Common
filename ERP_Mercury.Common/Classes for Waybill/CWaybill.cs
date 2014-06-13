@@ -668,12 +668,13 @@ namespace ERP_Mercury.Common
         /// <param name="uuidPaymentTypeId">УИ формы оплаты</param>
         /// <param name="uuidCustomerId">УИ клиента</param>
         /// <param name="strErr">текст ошибки</param>
+        /// <param name="OnlyUnShippedWaybills">признак "только не отгруженные накладные"</param>
         /// <returns>список объектов класса "CWaybill"</returns>
         public static List<CWaybill> GetWaybillList(UniXP.Common.CProfile objProfile, System.Guid Waybill_Guid, System.Boolean SelectWaybillInfoFromSuppl,
             System.DateTime dtBeginDate, System.DateTime dtEndDate,
             System.Guid uuidCompanyId, System.Guid uuidStockId,
             System.Guid uuidPaymentTypeId, System.Guid uuidCustomerId,
-            ref System.String strErr)
+            ref System.String strErr, System.Boolean OnlyUnShippedWaybills = false)
         {
             List<CWaybill> objList = new List<CWaybill>();
 
@@ -681,7 +682,7 @@ namespace ERP_Mercury.Common
             {
                 // вызов статического метода из класса, связанного с БД
                 System.Data.DataTable dtList = CWaybillDataBaseModel.GetWaybillTable(objProfile, null, Waybill_Guid, dtBeginDate, dtEndDate,
-                    uuidCompanyId, uuidStockId, uuidPaymentTypeId, uuidCustomerId, ref strErr, SelectWaybillInfoFromSuppl);
+                    uuidCompanyId, uuidStockId, uuidPaymentTypeId, uuidCustomerId, ref strErr, SelectWaybillInfoFromSuppl, OnlyUnShippedWaybills);
                 if (dtList != null)
                 {
                     CWaybill objWaybill = null;
@@ -831,126 +832,14 @@ namespace ERP_Mercury.Common
             try
             {
                 // вызов статического метода из класса, связанного с БД
-                System.Data.DataTable dtList = CWaybillDataBaseModel.GetWaybillTable(objProfile, null, Waybill_Guid,
+                List<CWaybill> objList = CWaybill.GetWaybillList(objProfile, Waybill_Guid, false,
                     System.DateTime.MinValue, System.DateTime.MinValue,
                     System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, ref strErr);
-                if (dtList != null)
+                if ((objList != null) && (objList.Count > 0))
                 {
-                    System.Int32 objWaybill_Ib_ID = 0;
-                    System.Data.DataRow objItem = dtList.Rows[0];
-                        objWaybill = new CWaybill();
-                        objWaybill_Ib_ID = System.Convert.ToInt32(objItem["Waybill_Id"]);
-                        objWaybill.ID = ((objItem["Waybill_Guid"] != System.DBNull.Value) ? new System.Guid(System.Convert.ToString(objItem["Waybill_Guid"])) : System.Guid.Empty);
-                        objWaybill.ParentID = ((objItem["WaybillParent_Guid"] != System.DBNull.Value) ? new System.Guid(System.Convert.ToString(objItem["WaybillParent_Guid"])) : System.Guid.Empty);
-                        objWaybill.SupplID = ((objItem["Suppl_Guid"] != System.DBNull.Value) ? new System.Guid(System.Convert.ToString(objItem["Suppl_Guid"])) : System.Guid.Empty);
-                        objWaybill.Ib_ID = ((objItem["Waybill_Id"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["Waybill_Id"]) : 0);
-                        objWaybill.Stock = ((objItem["Stock_Guid"] != System.DBNull.Value) ? new CStock()
-                        {
-                            ID = (System.Guid)objItem["Stock_Guid"],
-                            IBId = System.Convert.ToInt32(objItem["Stock_Id"]),
-                            Name = System.Convert.ToString(objItem["Stock_Name"]),
-                            IsAcitve = System.Convert.ToBoolean(objItem["Stock_IsActive"]),
-                            IsTrade = System.Convert.ToBoolean(objItem["Stock_IsTrade"]),
-                            WareHouse = new CWarehouse() { ID = (System.Guid)objItem["Warehouse_Guid"] },
-                            WareHouseType = new CWareHouseType() { ID = (System.Guid)objItem["WarehouseType_Guid"] }
-                        } : null);
-                        objWaybill.Company = ((objItem["Company_Guid"] != System.DBNull.Value) ? new CCompany()
-                        {
-                            ID = (System.Guid)objItem["Company_Guid"],
-                            InterBaseID = System.Convert.ToInt32(objItem["Company_Id"]),
-                            Abbr = System.Convert.ToString(objItem["Company_Acronym"]),
-                            Name = System.Convert.ToString(objItem["Company_Name"])
-                        } : null);
-
-                        objWaybill.Customer = ((objItem["Customer_Guid"] != System.DBNull.Value) ? new CCustomer()
-                        {
-                            ID = (System.Guid)objItem["Customer_Guid"],
-                            InterBaseID = System.Convert.ToInt32(objItem["Customer_Id"]),
-                            ShortName = System.Convert.ToString(objItem["Customer_Name"]),
-                            FullName = System.Convert.ToString(objItem["Customer_Name"])
-                        } : null);
-
-                        objWaybill.Customer.StateType = ((objItem["CustomerStateType_Guid"] != System.DBNull.Value) ? new CStateType()
-                        {
-                            ID = (System.Guid)objItem["CustomerStateType_Guid"],
-                            ShortName = System.Convert.ToString(objItem["CustomerStateType_ShortName"])
-                        } : null);
-
-                        objWaybill.Currency = ((objItem["Currency_Guid"] != System.DBNull.Value) ? new CCurrency()
-                        {
-                            ID = (System.Guid)objItem["Currency_Guid"],
-                            CurrencyAbbr = System.Convert.ToString(objItem["Currency_Abbr"])
-                        } : null);
-
-                        objWaybill.Depart = ((objItem["Depart_Guid"] != System.DBNull.Value) ? new CDepart()
-                        {
-                            uuidID = (System.Guid)objItem["Depart_Guid"],
-                            DepartCode = System.Convert.ToString(objItem["Depart_Code"])
-                        } : null);
-
-                        objWaybill.ChildDepart = ((objItem["ChildDepart_Guid"] != System.DBNull.Value) ? new CChildDepart()
-                        {
-                            ID = (System.Guid)objItem["ChildDepart_Guid"],
-                            Code = System.Convert.ToString(objItem["ChildDepart_Code"]),
-                            Name = System.Convert.ToString(objItem["ChildDepart_Name"])
-                        } : null);
-
-                        objWaybill.Rtt = ((objItem["Rtt_Guid"] != System.DBNull.Value) ? new CRtt()
-                        {
-                            ID = (System.Guid)objItem["Rtt_Guid"],
-                            ShortName = System.Convert.ToString(objItem["Rtt_Name"]),
-                            FullName = System.Convert.ToString(objItem["Rtt_Name"])
-                        } : null);
-
-                        objWaybill.AddressDelivery = ((objItem["Address_Guid"] != System.DBNull.Value) ? new CAddress()
-                        {
-                            ID = (System.Guid)objItem["Address_Guid"],
-                            Name = System.Convert.ToString(objItem["Address_FullName"])
-                        } : null);
-
-                        objWaybill.PaymentType = ((objItem["PaymentType_Guid"] != System.DBNull.Value) ? new CPaymentType(
-                            (System.Guid)objItem["PaymentType_Guid"], System.Convert.ToString(objItem["PaymentType_Name"])) : null);
-
-                        objWaybill.BeginDate = ((objItem["Waybill_BeginDate"] != System.DBNull.Value) ? System.Convert.ToDateTime(objItem["Waybill_BeginDate"]) : System.DateTime.MinValue);
-                        objWaybill.ShipDate = ((objItem["Waybill_ShipDate"] != System.DBNull.Value) ? System.Convert.ToDateTime(objItem["Waybill_ShipDate"]) : System.DateTime.MinValue);
-                        objWaybill.DeliveryDate = ((objItem["Waybill_DeliveryDate"] != System.DBNull.Value) ? System.Convert.ToDateTime(objItem["Waybill_DeliveryDate"]) : System.DateTime.MinValue);
-                        objWaybill.DocNum = ((objItem["Waybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Waybill_Num"]) : System.String.Empty);
-                        objWaybill.IsBonus = ((objItem["Waybill_Bonus"] != System.DBNull.Value) ? System.Convert.ToBoolean(objItem["Waybill_Bonus"]) : false);
-
-                        objWaybill.WaybillState = ((objItem["WaybillState_Guid"] != System.DBNull.Value) ? new CWaybillState()
-                        {
-                            ID = (System.Guid)objItem["WaybillState_Guid"],
-                            WaybillStateId = System.Convert.ToInt32(objItem["WaybillState_Id"]),
-                            Name = System.Convert.ToString(objItem["WaybillState_Name"])
-                        } : null);
-
-                        objWaybill.WaybillShipMode = ((objItem["WaybillShipMode_Guid"] != System.DBNull.Value) ? new CWaybillShipMode()
-                        {
-                            ID = (System.Guid)objItem["WaybillShipMode_Guid"],
-                            WaybillShipModeId = System.Convert.ToInt32(objItem["WaybillShipMode_Id"]),
-                            Name = System.Convert.ToString(objItem["WaybillShipMode_Name"])
-                        } : null);
-
-                        objWaybill.Description = ((objItem["Waybill_Description"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Waybill_Description"]) : System.String.Empty);
-
-                        objWaybill.SumWaybill = ((objItem["Waybill_AllPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_AllPrice"]) : 0);
-                        objWaybill.SumReturn = ((objItem["Waybill_RetAllPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_RetAllPrice"]) : 0);
-                        objWaybill.SumDiscount = ((objItem["Waybill_AllDiscount"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_AllDiscount"]) : 0);
-                        objWaybill.SumPayment = ((objItem["Waybill_AmountPaid"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_AmountPaid"]) : 0);
-
-                        objWaybill.SumWaybillInAccountingCurrency = ((objItem["Waybill_CurrencyAllPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_CurrencyAllPrice"]) : 0);
-                        objWaybill.SumReturnInAccountingCurrency = ((objItem["Waybill_CurrencyRetAllPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_CurrencyRetAllPrice"]) : 0);
-                        objWaybill.SumDiscountInAccountingCurrency = ((objItem["Waybill_CurrencyAllDiscount"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_CurrencyAllDiscount"]) : 0);
-                        objWaybill.SumPaymentInAccountingCurrency = ((objItem["Waybill_CurrencyAmountPaid"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_CurrencyAmountPaid"]) : 0);
-
-                        objWaybill.Quantity = ((objItem["Waybill_Quantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_Quantity"]) : 0);
-                        objWaybill.QuantityReturn = ((objItem["Waybill_RetQuantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_RetQuantity"]) : 0);
-                        objWaybill.Weight = ((objItem["Waybill_Weight"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["Waybill_Weight"]) : 0);
-                        objWaybill.ShowInDeliveryList = ((objItem["Waybill_ShowInDeliveryList"] != System.DBNull.Value) ? System.Convert.ToBoolean(objItem["Waybill_ShowInDeliveryList"]) : false);
-
+                    objWaybill = objList[0];
                 }
-
-                dtList = null;
+                objList = null;
 
             }
             catch (System.Exception f)
