@@ -1271,5 +1271,104 @@ namespace ERP_Mercury.Common
         }
         #endregion
 
+        #region Отгрузка накладной
+        /// <summary>
+        /// Отгрузка товара по накладной
+        /// </summary>
+        /// <param name="objProfile">Профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="Waybill_Guid">УИ накладной на отгрузку</param>
+        /// <param name="Waybill_ShipDate">Дата отгрузки</param>
+        /// <param name="SetWaybillShipMode_Guid">УИ варианта отгрузки</param>
+        /// <param name="ShipDescription">Примечание</param>
+        /// <param name="WaybillState_Guid">УИ текущего состояния накладной</param>
+        /// <param name="ERROR_NUM">целочисленный код ошибки</param>
+        /// <param name="ERROR_MES">текст ошибки</param>
+        /// <returns>0 - накладная отгружена; <>0 - ошибка</returns>
+        public static System.Int32 ShippedProductsByWaybill(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid Waybill_Guid, System.DateTime Waybill_ShipDate, 
+            System.Guid SetWaybillShipMode_Guid, System.String ShipDescription,
+            ref System.Guid WaybillState_Guid, ref System.Int32 ERROR_NUM, ref System.String ERROR_MES)
+        {
+            System.Int32 iRet = -1;
+
+            if( Waybill_Guid.CompareTo(System.Guid.Empty) == 0)
+            {
+                ERROR_MES += ("\nНе указан идентификатор накладной.");
+                return iRet;
+            }
+
+            if (Waybill_ShipDate.CompareTo(System.DateTime.MinValue) == 0)
+            {
+                ERROR_MES += ("\nУкажите, пожалуйста, дату отгрузки.");
+                return iRet;
+            }
+
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        ERROR_MES += ("\nНе удалось получить соединение с базой данных.");
+                        return iRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_ShipProductsByWaybill]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_ShipDate", System.Data.SqlDbType.Date));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@SetWaybillShipMode_Guid", System.Data.SqlDbType.UniqueIdentifier));
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@WaybillState_Guid", System.Data.SqlDbType.UniqueIdentifier) { Direction = System.Data.ParameterDirection.Output });
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8) { Direction = System.Data.ParameterDirection.Output });
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters["@Waybill_Guid"].Value = Waybill_Guid;
+                cmd.Parameters["@Waybill_ShipDate"].Value = Waybill_ShipDate;
+                cmd.Parameters["@SetWaybillShipMode_Guid"].Value = SetWaybillShipMode_Guid;
+
+                if (ShipDescription.Trim().Length > 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ShipDescription", System.Data.SqlDbType.NVarChar, 48));
+                    cmd.Parameters["@ShipDescription"].Value = ShipDescription;
+                }
+
+                iRet = cmd.ExecuteNonQuery();
+
+                iRet = System.Convert.ToInt32(cmd.Parameters["@ERROR_NUM"].Value);
+
+                if (cmd.Parameters["@ERROR_NUM"].Value != System.DBNull.Value) { ERROR_NUM = (System.Convert.ToInt32(cmd.Parameters["@ERROR_NUM"].Value)); }
+                if (cmd.Parameters["@ERROR_MES"].Value != System.DBNull.Value) { ERROR_MES += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value)); }
+                if (cmd.Parameters["@WaybillState_Guid"].Value != System.DBNull.Value) { WaybillState_Guid = (System.Guid)cmd.Parameters["@FINDED_MONEY"].Value; }
+
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    DBConnection.Close();
+                }
+            }
+            catch (System.Exception f)
+            {
+                ERROR_MES += (String.Format("\nНе удалось выполнить отгрузку накладной.\nТекст ошибки: {0}", f.Message));
+            }
+
+            return iRet;
+        }
+        
+        #endregion
+
     }
 }
