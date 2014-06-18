@@ -1352,7 +1352,7 @@ namespace ERP_Mercury.Common
 
                 if (cmd.Parameters["@ERROR_NUM"].Value != System.DBNull.Value) { ERROR_NUM = (System.Convert.ToInt32(cmd.Parameters["@ERROR_NUM"].Value)); }
                 if (cmd.Parameters["@ERROR_MES"].Value != System.DBNull.Value) { ERROR_MES += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value)); }
-                if (cmd.Parameters["@WaybillState_Guid"].Value != System.DBNull.Value) { WaybillState_Guid = (System.Guid)cmd.Parameters["@FINDED_MONEY"].Value; }
+                if (cmd.Parameters["@WaybillState_Guid"].Value != System.DBNull.Value) { WaybillState_Guid = (System.Guid)cmd.Parameters["@WaybillState_Guid"].Value; }
 
                 if (cmdSQL == null)
                 {

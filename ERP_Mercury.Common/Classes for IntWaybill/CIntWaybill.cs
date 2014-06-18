@@ -838,5 +838,39 @@ namespace ERP_Mercury.Common
 
         #endregion
 
+        #region Отгрузка накладной
+        /// <summary>
+        /// Отгрузка товара по накладной
+        /// </summary>
+        /// <param name="objProfile">Профайл</param>
+        /// <param name="IntWaybill_Guid">УИ накладной на отгрузку</param>
+        /// <param name="IntWaybill_ShipDate">Дата отгрузки</param>
+        /// <param name="SetIntWaybillShipMode_Guid">УИ варианта отгрузки</param>
+        /// <param name="IntWaybillState_Guid">УИ текущего состояния накладной</param>
+        /// <param name="iErr">целочисленный код ошибки</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>0 - накладная отгружена; <>0 - ошибка</returns>
+        public static System.Int32 ShippedProductsByIntWaybill(UniXP.Common.CProfile objProfile,
+            System.Guid IntWaybill_Guid, System.DateTime IntWaybill_ShipDate, System.Guid SetIntWaybillShipMode_Guid,
+            ref System.Guid IntWaybillState_Guid, ref System.Int32 iErr, ref System.String strErr)
+        {
+            System.Int32 iRet = -1;
+            try
+            {
+                iRet = CIntWaybillDataBaseModel.ShippedProductsByIntWaybill(objProfile, null,
+                    IntWaybill_Guid, IntWaybill_ShipDate, SetIntWaybillShipMode_Guid, 
+                    ref IntWaybillState_Guid, ref iErr, ref strErr);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return iRet;
+        }
+        #endregion
+
     }
 }
