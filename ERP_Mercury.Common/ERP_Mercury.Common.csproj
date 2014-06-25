@@ -135,6 +135,8 @@
     <Compile Include="Classes for BackWaybill\CBackWaybillDataBaseModel.cs" />
     <Compile Include="Classes for BackWaybill\CBackWaybillState.cs" />
     <Compile Include="Classes for BackWaybill\CWaybillBackReason.cs" />
+    <Compile Include="Classes for IntOrder\CIntOrderShipMode.cs" />
+    <Compile Include="Classes for IntOrder\CIntOrderState.cs" />
     <Compile Include="Classes for IntWaybill\CIntWaybill.cs" />
     <Compile Include="Classes for IntWaybill\CIntWaybillDataBaseModel.cs" />
     <Compile Include="Classes for IntWaybill\CIntWaybillShipMode.cs" />
