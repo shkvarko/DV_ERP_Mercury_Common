@@ -26,7 +26,7 @@ namespace ERP_Mercury.Common
         /// <param name="OnlyUnShippedWaybills">признак "только не отгруженные накладные"</param>
         /// <returns>таблицу</returns>
         public static System.Data.DataTable GetWaybillTable(UniXP.Common.CProfile objProfile,
-            System.Data.SqlClient.SqlCommand cmdSQL, System.Guid Waybill_Guid,
+            System.Data.SqlClient.SqlCommand cmdSQL, System.Guid Waybill_Guid, System.Data.DataTable dtWaybillIdList,
             System.DateTime dtBeginDate, System.DateTime dtEndDate,
             System.Guid uuidCompanyId, System.Guid uuidStockId,
             System.Guid uuidPaymentTypeId, System.Guid uuidCustomerId,
@@ -102,6 +102,7 @@ namespace ERP_Mercury.Common
             dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_LeavQuantity", typeof(System.Double)));
             dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_Weight", typeof(System.Double)));
             dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_ShowInDeliveryList", typeof(System.Boolean)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Waybill_CanShip", typeof(System.Boolean)));
 
             System.Data.SqlClient.SqlConnection DBConnection = null;
             System.Data.SqlClient.SqlCommand cmd = null;
@@ -126,37 +127,47 @@ namespace ERP_Mercury.Common
                     cmd.Parameters.Clear();
                 }
 
-                if (Waybill_Guid.CompareTo(System.Guid.Empty) == 0)
+                if ((Waybill_Guid.CompareTo(System.Guid.Empty) == 0) || (dtWaybillIdList != null))
                 {
-                    cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetWaybillList]", objProfile.GetOptionsDllDBName());
-                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_DateBegin", System.Data.DbType.Date));
-                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_DateEnd", System.Data.DbType.Date));
-                    cmd.Parameters["@Waybill_DateBegin"].Value = dtBeginDate;
-                    cmd.Parameters["@Waybill_DateEnd"].Value = dtEndDate;
+                    if (dtWaybillIdList == null)
+                    {
 
-                    if (uuidCompanyId.CompareTo(System.Guid.Empty) != 0)
-                    {
-                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_CompanyGuid", System.Data.DbType.Guid));
-                        cmd.Parameters["@Waybill_CompanyGuid"].Value = uuidCompanyId;
+                        cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetWaybillList]", objProfile.GetOptionsDllDBName());
+                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_DateBegin", System.Data.DbType.Date));
+                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_DateEnd", System.Data.DbType.Date));
+                        cmd.Parameters["@Waybill_DateBegin"].Value = dtBeginDate;
+                        cmd.Parameters["@Waybill_DateEnd"].Value = dtEndDate;
+
+                        if (uuidCompanyId.CompareTo(System.Guid.Empty) != 0)
+                        {
+                            cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_CompanyGuid", System.Data.DbType.Guid));
+                            cmd.Parameters["@Waybill_CompanyGuid"].Value = uuidCompanyId;
+                        }
+                        if (uuidStockId.CompareTo(System.Guid.Empty) != 0)
+                        {
+                            cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_StockGuid", System.Data.DbType.Guid));
+                            cmd.Parameters["@Waybill_StockGuid"].Value = uuidStockId;
+                        }
+                        if (uuidPaymentTypeId.CompareTo(System.Guid.Empty) != 0)
+                        {
+                            cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_PaymentTypeGuid", System.Data.DbType.Guid));
+                            cmd.Parameters["@Waybill_PaymentTypeGuid"].Value = uuidPaymentTypeId;
+                        }
+                        if (uuidCustomerId.CompareTo(System.Guid.Empty) != 0)
+                        {
+                            cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_CustomerGuid", System.Data.DbType.Guid));
+                            cmd.Parameters["@Waybill_CustomerGuid"].Value = uuidCustomerId;
+                        }
+                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@OnlyUnShippedWaybills", System.Data.SqlDbType.Bit));
+                        cmd.Parameters["@OnlyUnShippedWaybills"].Value = OnlyUnShippedWaybills;
                     }
-                    if (uuidStockId.CompareTo(System.Guid.Empty) != 0)
+                    else
                     {
-                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_StockGuid", System.Data.DbType.Guid));
-                        cmd.Parameters["@Waybill_StockGuid"].Value = uuidStockId;
+                        cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetWaybillListByIDList]", objProfile.GetOptionsDllDBName());
+                        cmd.Parameters.AddWithValue("@tWaybillList", dtWaybillIdList);
+                        cmd.Parameters["@tWaybillList"].SqlDbType = System.Data.SqlDbType.Structured;
+                        cmd.Parameters["@tWaybillList"].TypeName = "dbo.udt_IDList";
                     }
-                    if (uuidPaymentTypeId.CompareTo(System.Guid.Empty) != 0)
-                    {
-                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_PaymentTypeGuid", System.Data.DbType.Guid));
-                        cmd.Parameters["@Waybill_PaymentTypeGuid"].Value = uuidPaymentTypeId;
-                    }
-                    if (uuidCustomerId.CompareTo(System.Guid.Empty) != 0)
-                    {
-                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Waybill_CustomerGuid", System.Data.DbType.Guid));
-                        cmd.Parameters["@Waybill_CustomerGuid"].Value = uuidCustomerId;
-                    }
-                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@OnlyUnShippedWaybills", System.Data.SqlDbType.Bit));
-                    cmd.Parameters["@OnlyUnShippedWaybills"].Value = OnlyUnShippedWaybills;
-                    
                 }
                 else
                 {
@@ -198,6 +209,7 @@ namespace ERP_Mercury.Common
                         newRow["Stock_IsActive"] = ((rs["Stock_IsActive"] != System.DBNull.Value) ? System.Convert.ToBoolean(rs["Stock_IsActive"]) : false);
                         newRow["Stock_IsTrade"] = ((rs["Stock_IsTrade"] != System.DBNull.Value) ? System.Convert.ToBoolean(rs["Stock_IsTrade"]) : false);
 
+                        newRow["Waybill_CanShip"] = ((rs["Waybill_CanShip"] != System.DBNull.Value) ? System.Convert.ToBoolean(rs["Waybill_CanShip"]) : false);
                         newRow["Depart_Guid"] = ((rs["Depart_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Depart_Guid"] : System.Guid.Empty);
                         newRow["Depart_Code"] = ((rs["Depart_Code"] != System.DBNull.Value) ? System.Convert.ToString(rs["Depart_Code"]) : System.String.Empty);
 
@@ -1368,6 +1380,92 @@ namespace ERP_Mercury.Common
             return iRet;
         }
         
+        #endregion
+
+        #region Установка признака "накладную можно отгружать" 
+        /// <summary>
+        /// Устанавливает признак "накладную можно отгружать"  для списка накладных
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="WaybillGuidList">список идентификаторов накладных</param>
+        /// <param name="CanShip">признак "накладную можно отгружать"</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean SetShipRemarkForWaybillList(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Data.DataTable WaybillGuidList, System.Boolean CanShip,  ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr = "Не удалось получить соединение с базой данных.";
+                        return bRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_SetShipRemarkForWaybills]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@CanShip", System.Data.SqlDbType.Bit));
+
+                cmd.Parameters.AddWithValue("@tWaybillList", WaybillGuidList);
+                cmd.Parameters["@tWaybillList"].SqlDbType = System.Data.SqlDbType.Structured;
+                cmd.Parameters["@tWaybillList"].TypeName = "dbo.udt_GuidList";
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters["@CanShip"].Value = CanShip;
+
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    strErr = "Операция завершена.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
         #endregion
 
     }

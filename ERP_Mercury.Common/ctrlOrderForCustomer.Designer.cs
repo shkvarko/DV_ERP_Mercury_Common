@@ -488,7 +488,7 @@
             this.toolStripSeparator2,
             this.mitemClearRows});
             this.contextMenuStrip.Name = "contextMenuStripLicence";
-            this.contextMenuStrip.Size = new System.Drawing.Size(288, 82);
+            this.contextMenuStrip.Size = new System.Drawing.Size(288, 104);
             this.toolTipController.SetSuperTip(this.contextMenuStrip, null);
             this.contextMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.contextMenuStrip_Opening);
             // 

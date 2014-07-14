@@ -119,7 +119,7 @@ namespace ERP_Mercury.Common
         {
             System.String strErr = "";
 
-            System.Boolean bRet = CWaybillStateDataBaseModel.RemoveObjectFromDataBase(this.ID, objProfile, ref strErr);
+            System.Boolean bRet = CIntWaybillStateDataBaseModel.RemoveObjectFromDataBase(this.ID, objProfile, ref strErr);
             if (bRet == false)
             {
                 DevExpress.XtraEditors.XtraMessageBox.Show(strErr, "Внимание",

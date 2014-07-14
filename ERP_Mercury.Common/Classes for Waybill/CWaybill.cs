@@ -381,6 +381,8 @@ namespace ERP_Mercury.Common
             SumDiscount = 0;
             SumWaybillInAccountingCurrency = 0;
             SumDiscountInAccountingCurrency = 0;
+            CanShip = false;
+            IsBonus = false;
         }
         #endregion
 
@@ -450,6 +452,10 @@ namespace ERP_Mercury.Common
         /// Признак "Заказ является бонусом"
         /// </summary>
         public System.Boolean IsBonus { get; set; }
+        /// <summary>
+        /// Признак "Накладную можно отгружать"
+        /// </summary>
+        public System.Boolean CanShip { get; set; }
         #endregion
 
         #region Клиент
@@ -656,10 +662,47 @@ namespace ERP_Mercury.Common
 
         #region Журнал накладных
         /// <summary>
+        /// Преобразует список записей к табличному виду
+        /// </summary>
+        /// <param name="objWaybillIdList">список уникальных идентификаторов (int)</param>
+        /// <param name="strErr">сообщение об ошибке</param>
+        /// <returns>таблица</returns>
+        public static System.Data.DataTable ConvertWaybillIdListToTable(List<System.Int32> objWaybillIdList, ref System.String strErr)
+        {
+            System.Data.DataTable objTable = new System.Data.DataTable();
+            try
+            {
+                objTable.Columns.Add(new System.Data.DataColumn("Item_Id", typeof(System.Data.SqlTypes.SqlInt32)));
+
+                System.Data.DataRow newRow = null;
+                foreach (System.Int32 ItemID in objWaybillIdList)
+                {
+                    newRow = objTable.NewRow();
+                    newRow["Item_Id"] = ItemID;
+                    objTable.Rows.Add(newRow);
+                }
+                if (objWaybillIdList.Count > 0)
+                {
+                    objTable.AcceptChanges();
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                objTable = null;
+                strErr += (String.Format("ConvertWaybillIdListToTable. Текст ошибки: {0}", f.Message));
+            }
+			finally // очищаем занимаемые ресурсы
+            {
+            }
+            return objTable;
+        }
+        /// <summary>
         /// Возвращает список накладных за указанный период
         /// </summary>
         /// <param name="objProfile">профайл</param>
         /// <param name="Waybill_Guid">УИ документа</param>
+        /// <param name="objWaybillIdList">список УИ (InterBase) накладных</param>
         /// <param name="SelectWaybillInfoFromSuppl">признак "информация для накладной запрашивается из заказа"</param>
         /// <param name="dtBeginDate">начало периода для выборки</param>
         /// <param name="dtEndDate">конец периода для выборки</param>
@@ -670,7 +713,8 @@ namespace ERP_Mercury.Common
         /// <param name="strErr">текст ошибки</param>
         /// <param name="OnlyUnShippedWaybills">признак "только не отгруженные накладные"</param>
         /// <returns>список объектов класса "CWaybill"</returns>
-        public static List<CWaybill> GetWaybillList(UniXP.Common.CProfile objProfile, System.Guid Waybill_Guid, System.Boolean SelectWaybillInfoFromSuppl,
+        public static List<CWaybill> GetWaybillList(UniXP.Common.CProfile objProfile, System.Guid Waybill_Guid, List<System.Int32> objWaybillIdList,
+            System.Boolean SelectWaybillInfoFromSuppl,
             System.DateTime dtBeginDate, System.DateTime dtEndDate,
             System.Guid uuidCompanyId, System.Guid uuidStockId,
             System.Guid uuidPaymentTypeId, System.Guid uuidCustomerId,
@@ -680,8 +724,10 @@ namespace ERP_Mercury.Common
 
             try
             {
+                System.Data.DataTable dtWaybillIdList = ( (objWaybillIdList != null ) ? ConvertWaybillIdListToTable(objWaybillIdList, ref strErr) : null );
+
                 // вызов статического метода из класса, связанного с БД
-                System.Data.DataTable dtList = CWaybillDataBaseModel.GetWaybillTable(objProfile, null, Waybill_Guid, dtBeginDate, dtEndDate,
+                System.Data.DataTable dtList = CWaybillDataBaseModel.GetWaybillTable(objProfile, null, Waybill_Guid, dtWaybillIdList, dtBeginDate, dtEndDate,
                     uuidCompanyId, uuidStockId, uuidPaymentTypeId, uuidCustomerId, ref strErr, SelectWaybillInfoFromSuppl, OnlyUnShippedWaybills);
                 if (dtList != null)
                 {
@@ -771,6 +817,7 @@ namespace ERP_Mercury.Common
                         objWaybill.DeliveryDate = ((objItem["Waybill_DeliveryDate"] != System.DBNull.Value) ? System.Convert.ToDateTime(objItem["Waybill_DeliveryDate"]) : System.DateTime.MinValue);
                         objWaybill.DocNum = ((objItem["Waybill_Num"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Waybill_Num"]) : System.String.Empty);
                         objWaybill.IsBonus = ((objItem["Waybill_Bonus"] != System.DBNull.Value) ? System.Convert.ToBoolean(objItem["Waybill_Bonus"]) : false);
+                        objWaybill.CanShip = ((objItem["Waybill_CanShip"] != System.DBNull.Value) ? System.Convert.ToBoolean(objItem["Waybill_CanShip"]) : false);
 
                         objWaybill.WaybillState = ((objItem["WaybillState_Guid"] != System.DBNull.Value) ? new CWaybillState()
                         {
@@ -832,7 +879,7 @@ namespace ERP_Mercury.Common
             try
             {
                 // вызов статического метода из класса, связанного с БД
-                List<CWaybill> objList = CWaybill.GetWaybillList(objProfile, Waybill_Guid, false,
+                List<CWaybill> objList = CWaybill.GetWaybillList(objProfile, Waybill_Guid, null, false,
                     System.DateTime.MinValue, System.DateTime.MinValue,
                     System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, ref strErr);
                 if ((objList != null) && (objList.Count > 0))
@@ -848,7 +895,32 @@ namespace ERP_Mercury.Common
             }
             return objWaybill;
         }
-        
+        /// <summary>
+        /// Возвращает список накладных по указанным идентификаторам накладных (Interbase)
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="objWaybillIdList">список целочисленных идентификаторов накладных</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>список объектов класса "CWaybill"</returns>
+        public static List<CWaybill> GetWaybillListByWaybillIdList(UniXP.Common.CProfile objProfile, List<System.Int32> objWaybillIdList,
+            ref System.String strErr)
+        {
+            List<CWaybill> objWaybillList = null;
+
+            try
+            {
+                // вызов статического метода из класса, связанного с БД
+                objWaybillList = CWaybill.GetWaybillList( objProfile, System.Guid.Empty, objWaybillIdList, false,
+                    System.DateTime.MinValue, System.DateTime.MinValue,
+                    System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, System.Guid.Empty, ref strErr);
+
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("\nНе удалось получить список накладных.\nТекст ошибки: {0}", f.Message));
+            }
+            return objWaybillList;
+        }
         #endregion
 
         #region Формирование накладной из заказа
@@ -1302,6 +1374,76 @@ namespace ERP_Mercury.Common
             {
             }
             return iRet;
+        }
+        #endregion
+
+        #region Установка признака "накладную можно отгружать"
+        /// <summary>
+        /// Проверка значений перед установкой признака "накладную можно отгружать"
+        /// </summary>
+        /// <param name="WaybillGuidList">список идентификаторов  накладных</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - проверка пройдена; false - проверка не пройдена</returns>
+        public static System.Boolean CheckAllPropertiesBeforeSetShipRemark(
+            System.Data.DataTable WaybillGuidList, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                if ((WaybillGuidList == null) || (WaybillGuidList.Rows.Count == 0))
+                {
+                    strErr = "Список накладных не содержит записей. Добавьте, пожалуйста, хотя бы одну позицию.";
+                    return bRet;
+                }
+
+                bRet = true;
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "CheckAllPropertiesBeforeSetShipRemark.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+            }
+
+            return bRet;
+        }
+        /// <summary>
+        /// Установка признака "накладную можно отгружать"
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="WaybillGuidList">список идентификаторов накладных</param>
+        /// <param name="CanShip">признак "накладную можно отгружать"</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean SetShipRemarkForWaybillList(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+             List<System.Guid> WaybillGuidList, System.Boolean CanShip, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                System.Data.DataTable dtWaybillList = ConvertWaybillGuidListToTable(WaybillGuidList, ref strErr);
+
+                if (dtWaybillList != null)
+                {
+                    if (CheckAllPropertiesBeforeSetShipRemark( dtWaybillList, ref strErr ) == true)
+                    {
+                        bRet = CWaybillDataBaseModel.SetShipRemarkForWaybillList( objProfile, null,
+                           dtWaybillList, CanShip, ref strErr);
+                    }
+                }
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
         }
         #endregion
 

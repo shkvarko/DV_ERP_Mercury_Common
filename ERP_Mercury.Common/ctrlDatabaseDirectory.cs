@@ -97,7 +97,11 @@ namespace ERP_Mercury.Common
         WaybillState = 77,
         WaybillShipMode = 78,
         BackWaybillState = 79,
-        WaybillBackReason = 80
+        WaybillBackReason = 80,
+        IntWaybillState = 81,
+        IntWaybillShipMode = 82,
+        IntOrderState = 83,
+        IntOrderShipMode = 84
     }
 
     public partial class ctrlDatabaseDirectory : UserControl
@@ -1383,7 +1387,58 @@ namespace ERP_Mercury.Common
                                 }
                             }
                             break;
-
+                        }
+                    case EnumDirectSimple.IntWaybillShipMode:
+                        {
+                            // вид отгрузки накладной на внутреннее перемещение
+                            List<CIntWaybillShipMode> objList = CIntWaybillShipMode.GetIntWaybillShipModeList(m_objProfile, ref strErr);
+                            if (objList != null)
+                            {
+                                foreach (CIntWaybillShipMode objItem in objList)
+                                {
+                                    treeList.AppendNode(new object[] { objItem.Name }, null).Tag = objItem;
+                                }
+                            }
+                            break;
+                        }
+                    case EnumDirectSimple.IntWaybillState:
+                        {
+                            // состояние накладной на внутреннее перемещение
+                            List<CIntWaybillState> objList = CIntWaybillState.GetIntWaybillStateList(m_objProfile, ref strErr);
+                            if (objList != null)
+                            {
+                                foreach (CIntWaybillState objItem in objList)
+                                {
+                                    treeList.AppendNode(new object[] { objItem.Name }, null).Tag = objItem;
+                                }
+                            }
+                            break;
+                        }
+                    case EnumDirectSimple.IntOrderShipMode:
+                        {
+                            // вид отгрузки заказа на внутреннее перемещение
+                            List<CIntOrderShipMode> objList = CIntOrderShipMode.GetIntOrderShipModeList(m_objProfile, ref strErr);
+                            if (objList != null)
+                            {
+                                foreach (CIntOrderShipMode objItem in objList)
+                                {
+                                    treeList.AppendNode(new object[] { objItem.Name }, null).Tag = objItem;
+                                }
+                            }
+                            break;
+                        }
+                    case EnumDirectSimple.IntOrderState:
+                        {
+                            // состояние заказа на внутреннее перемещение
+                            List<CIntOrderState> objList = CIntOrderState.GetIntOrderStateList(m_objProfile, ref strErr);
+                            if (objList != null)
+                            {
+                                foreach (CIntOrderState objItem in objList)
+                                {
+                                    treeList.AppendNode(new object[] { objItem.Name }, null).Tag = objItem;
+                                }
+                            }
+                            break;
                         }
 
                     default:
@@ -2356,6 +2411,30 @@ namespace ERP_Mercury.Common
                         {
                             // причина возврата товара
                             objNewNode.Tag = new CWaybillBackReason();
+                            break;
+                        }
+                    case EnumDirectSimple.IntWaybillShipMode:
+                        {
+                            // вид отгрузки накладной на внутреннее перемещение
+                            objNewNode.Tag = new CIntWaybillShipMode();
+                            break;
+                        }
+                    case EnumDirectSimple.IntWaybillState:
+                        {
+                            // состояние накладной на внутреннее перемещение
+                            objNewNode.Tag = new CIntWaybillState();
+                            break;
+                        }
+                    case EnumDirectSimple.IntOrderShipMode:
+                        {
+                            // вид отгрузки заказа на внутреннее перемещение
+                            objNewNode.Tag = new CIntOrderShipMode();
+                            break;
+                        }
+                    case EnumDirectSimple.IntOrderState:
+                        {
+                            // состояние заказа на внутреннее перемещение
+                            objNewNode.Tag = new CIntOrderState();
                             break;
                         }
                     default:

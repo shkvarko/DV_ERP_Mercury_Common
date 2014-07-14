@@ -63,13 +63,12 @@ namespace ERP_Mercury.Common
         /// </summary>
         public System.Double QuantityReturn { get; set; }
         /// <summary>
-        /// Количество проданное с учетом возврата
+        /// Количество с учетом возврата
         /// </summary>
         public System.Double QuantityWithReturn
         {
             get { return (Quantity - QuantityReturn); }
         }
-
         /// <summary>
         /// Цена первого поставщика (в национальной валюте)
         /// </summary>
@@ -83,7 +82,7 @@ namespace ERP_Mercury.Common
         /// </summary>
         public System.Double NDSPercent { get; set; }
         /// <summary>
-        /// Цена отпускная (в национальной валюте)
+        /// Цена (в национальной валюте)
         /// </summary>
         public System.Double Price { get; set; }
         /// <summary>
@@ -94,6 +93,10 @@ namespace ERP_Mercury.Common
         /// Цена отпускная с учетом скидки
         /// </summary>
         public System.Double PriceWithDiscount { get; set; }
+        /// <summary>
+        /// Цена розничная
+        /// </summary>
+        public System.Double PriceRetail { get; set; }
 
         /// <summary>
         /// Сумма без учета скидки (в национальной валюте)
@@ -106,28 +109,8 @@ namespace ERP_Mercury.Common
         /// <summary>
         /// Сумма с учетом скидки и с учетом возврата (в национальной валюте)
         /// </summary>
-        public System.Double SumWithDiscountAndReturn { get { return (QuantityWithReturn * PriceWithDiscount); } }
+        public System.Double SumRetail { get { return (Quantity * PriceRetail); } }
 
-        /// <summary>
-        /// Цена отпускная (в валюте учета)
-        /// </summary>
-        public System.Double PriceInAccountingCurrency { get; set; }
-        /// <summary>
-        /// Цена отпускная с учетом скидки (в валюте учета)
-        /// </summary>
-        public System.Double PriceWithDiscountInAccountingCurrency { get; set; }
-        /// <summary>
-        /// Сумма без учета скидки (в валюте учета)
-        /// </summary>
-        public System.Double SumInAccountingCurrency { get { return (Quantity * PriceInAccountingCurrency); } }
-        /// <summary>
-        /// Сумма с учетом скидки (в валюте учета)
-        /// </summary>
-        public System.Double SumWithDiscountInAccountingCurrency { get { return (Quantity * PriceWithDiscountInAccountingCurrency); } }
-        /// <summary>
-        /// Сумма с учетом скидки и с учетом возврата (в валюте учета)
-        /// </summary>
-        public System.Double SumWithDiscountAndReturnInAccountingCurrency { get { return (QuantityWithReturn * PriceWithDiscountInAccountingCurrency); } }
         #endregion
 
         #region Конструктор
@@ -146,8 +129,7 @@ namespace ERP_Mercury.Common
             PriceImporter = 0;
             Price = 0;
             PriceWithDiscount = 0;
-            PriceInAccountingCurrency = 0;
-            PriceWithDiscountInAccountingCurrency = 0;
+            PriceRetail = 0;
         }
 
         #endregion
@@ -176,9 +158,9 @@ namespace ERP_Mercury.Common
                     {
                         objWaybillItem = new CIntWaybillItem();
 
-                        objWaybillItem.ID = ((objItem["WaybItem_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["WaybItem_Guid"] : System.Guid.Empty);
-                        objWaybillItem.Ib_ID = ((objItem["WaybItem_Id"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["WaybItem_Id"]) : 0);
-                        objWaybillItem.IntOrderItemID = ((objItem["SupplItem_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["SupplItem_Guid"] : System.Guid.Empty);
+                        objWaybillItem.ID = ((objItem["IntWaybItem_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["IntWaybItem_Guid"] : System.Guid.Empty);
+                        objWaybillItem.IntOrderItemID = ((objItem["IntOrderItem_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["IntOrderItem_Guid"] : System.Guid.Empty);
+                        objWaybillItem.Ib_ID = ((objItem["IntWaybillItem_Id"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["IntWaybillItem_Id"]) : 0);
                         objWaybillItem.Product = ((objItem["Parts_Guid"] != System.DBNull.Value) ? new CProduct()
                         {
                             ID = (System.Guid)objItem["Parts_Guid"],
@@ -193,17 +175,16 @@ namespace ERP_Mercury.Common
                             ShortName = System.Convert.ToString(objItem["Measure_ShortName"])
                         } : null);
 
-                        objWaybillItem.Quantity = ((objItem["WaybItem_Quantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_Quantity"]) : 0);
-                        objWaybillItem.QuantityReturn = ((objItem["WaybItem_RetQuantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_RetQuantity"]) : 0);
+                        objWaybillItem.Quantity = ((objItem["IntWaybItem_Quantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_Quantity"]) : 0);
+                        objWaybillItem.QuantityReturn = ((objItem["IntWaybItem_RetQuantity"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_RetQuantity"]) : 0);
 
-                        objWaybillItem.NDSPercent = ((objItem["WaybItem_NDSPercent"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_NDSPercent"]) : 0);
-                        objWaybillItem.MarkUpPercent = ((objItem["WaybItem_MarkUpPercent"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_MarkUpPercent"]) : 0);
-                        objWaybillItem.PriceImporter = ((objItem["WaybItem_PriceImporter"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_PriceImporter"]) : 0);
-                        objWaybillItem.Price = ((objItem["WaybItem_Price"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_Price"]) : 0);
-                        objWaybillItem.DiscountPercent = ((objItem["WaybItem_Discount"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_Discount"]) : 0);
-                        objWaybillItem.PriceWithDiscount = ((objItem["WaybItem_DiscountPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_DiscountPrice"]) : 0);
-                        objWaybillItem.PriceInAccountingCurrency = ((objItem["WaybItem_CurrencyPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_CurrencyPrice"]) : 0);
-                        objWaybillItem.PriceWithDiscountInAccountingCurrency = ((objItem["WaybItem_CurrencyDiscountPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WaybItem_CurrencyDiscountPrice"]) : 0);
+                        objWaybillItem.NDSPercent = ((objItem["IntWaybItem_NDSPercent"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_NDSPercent"]) : 0);
+                        objWaybillItem.MarkUpPercent = ((objItem["IntWaybItem_MarkUpPercent"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_MarkUpPercent"]) : 0);
+                        objWaybillItem.PriceImporter = ((objItem["IntWaybItem_PriceImporter"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_PriceImporter"]) : 0);
+                        objWaybillItem.Price = ((objItem["IntWaybItem_Price"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_Price"]) : 0);
+                        objWaybillItem.DiscountPercent = ((objItem["IntWaybItem_Discount"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_Discount"]) : 0);
+                        objWaybillItem.PriceWithDiscount = ((objItem["IntWaybItem_DiscountPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_DiscountPrice"]) : 0);
+                        objWaybillItem.PriceRetail = ((objItem["IntWaybItem_RetailPrice"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["IntWaybItem_RetailPrice"]) : 0);
 
 
                         if (objWaybillItem != null) { objList.Add(objWaybillItem); }
@@ -216,103 +197,7 @@ namespace ERP_Mercury.Common
             }
             catch (System.Exception f)
             {
-                strErr += (String.Format("\nНе удалось получить приложение к накладной.\nТекст ошибки: {0}", f.Message));
-            }
-            return objList;
-        }
-
-        /// <summary>
-        /// Возвращает приложение к накладной
-        /// </summary>
-        /// <param name="objProfile">профайл</param>
-        /// <param name="uuidWaybillId">уи накладной</param>
-        /// <param name="strErr">сообщение об ошибке</param>
-        /// <returns>приложение к накладной, как список структур WaybillItemForExport</returns>
-        public static List<WaybillItemForExport> GetWaybillTablePartForExportToExcel(UniXP.Common.CProfile objProfile,
-            System.Guid uuidWaybillId, ref System.String strErr)
-        {
-            List<WaybillItemForExport> objList = new List<WaybillItemForExport>();
-
-            try
-            {
-                System.Data.DataTable dtList = CWaybillDataBaseModel.GetWaybilItemTableForExportToExcel(objProfile, null, uuidWaybillId, ref strErr);
-                if (dtList != null)
-                {
-                    System.Int32 iWAYBITMS_ID;
-                    System.Int32 iPARTS_ID;
-                    System.String strPARTS_FULLNAME;
-                    System.String strOWNER_NAME;
-                    System.String strMEASURE_SHORTNAME;
-                    System.Double dblWAYBITMS_QUANTITY;
-                    System.Double dblWAYBITMS_BASEPRICE;
-                    System.String strWAYBITMS_PERCENT;
-                    System.Double dblWAYBITMS_DOUBLEPERCENT;
-                    System.Double dblWAYBITMS_TOTALPRICEWITHOUTNDS;
-                    System.Double dblWAYBITMS_NDS;
-                    System.String strWAYBITMS_STRNDS;
-                    System.Double dblWAYBITMS_NDSTOTALPRICE;
-                    System.Double dblWAYBITMS_TOTALPRICE;
-                    System.Double dblWAYBITMS_WEIGHT;
-                    System.String strWAYBITMS_PLACES;
-                    System.Int32 iWAYBITMS_INTPLACES;
-                    System.String strWAYBITMS_TARA;
-                    System.String strWAYBITMS_QTYINPLACE;
-                    System.String strPARTS_CERTIFICATE;
-                    System.String strWAYBITMS_NOTES;
-                    System.Double dblWAYBITMS_PRICEWITHOUTNDS;
-                    System.String strCOUNTRY_NAME;
-                    System.Guid uuidParts_Guid;
-                    System.String strParts_Barcode;
-                    System.String strParts_BarcodeList;
-
-                    foreach (System.Data.DataRow objItem in dtList.Rows)
-                    {
-                        iWAYBITMS_ID = ((objItem["WAYBITMS_ID"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["WAYBITMS_ID"]) : 0);
-                        iPARTS_ID = ((objItem["PARTS_ID"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["PARTS_ID"]) : 0);
-                        strPARTS_FULLNAME = ((objItem["PARTS_FULLNAME"] != System.DBNull.Value) ? System.Convert.ToString(objItem["PARTS_FULLNAME"]) : System.String.Empty);
-                        strOWNER_NAME = ((objItem["OWNER_NAME"] != System.DBNull.Value) ? System.Convert.ToString(objItem["OWNER_NAME"]) : System.String.Empty);
-                        strMEASURE_SHORTNAME = ((objItem["MEASURE_SHORTNAME"] != System.DBNull.Value) ? System.Convert.ToString(objItem["MEASURE_SHORTNAME"]) : System.String.Empty);
-                        dblWAYBITMS_QUANTITY = ((objItem["WAYBITMS_QUANTITY"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_QUANTITY"]) : 0);
-                        dblWAYBITMS_BASEPRICE = ((objItem["WAYBITMS_BASEPRICE"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_BASEPRICE"]) : 0);
-                        strWAYBITMS_PERCENT = ((objItem["WAYBITMS_PERCENT"] != System.DBNull.Value) ? System.Convert.ToString(objItem["WAYBITMS_PERCENT"]) : System.String.Empty);
-                        dblWAYBITMS_DOUBLEPERCENT = ((objItem["WAYBITMS_DOUBLEPERCENT"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_DOUBLEPERCENT"]) : 0);
-                        dblWAYBITMS_TOTALPRICEWITHOUTNDS = ((objItem["WAYBITMS_TOTALPRICEWITHOUTNDS"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_TOTALPRICEWITHOUTNDS"]) : 0);
-                        dblWAYBITMS_NDS = ((objItem["WAYBITMS_NDS"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_NDS"]) : 0);
-                        strWAYBITMS_STRNDS = ((objItem["WAYBITMS_STRNDS"] != System.DBNull.Value) ? System.Convert.ToString(objItem["WAYBITMS_STRNDS"]) : System.String.Empty);
-                        dblWAYBITMS_NDSTOTALPRICE = ((objItem["WAYBITMS_NDSTOTALPRICE"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_NDSTOTALPRICE"]) : 0);
-                        dblWAYBITMS_TOTALPRICE = ((objItem["WAYBITMS_TOTALPRICE"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_TOTALPRICE"]) : 0);
-                        dblWAYBITMS_WEIGHT = ((objItem["WAYBITMS_WEIGHT"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_WEIGHT"]) : 0);
-                        strWAYBITMS_PLACES = ((objItem["WAYBITMS_PLACES"] != System.DBNull.Value) ? System.Convert.ToString(objItem["WAYBITMS_PLACES"]) : System.String.Empty);
-                        iWAYBITMS_INTPLACES = ((objItem["WAYBITMS_INTPLACES"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["WAYBITMS_INTPLACES"]) : 0);
-                        strWAYBITMS_TARA = ((objItem["WAYBITMS_TARA"] != System.DBNull.Value) ? System.Convert.ToString(objItem["WAYBITMS_TARA"]) : System.String.Empty);
-                        strWAYBITMS_QTYINPLACE = ((objItem["WAYBITMS_QTYINPLACE"] != System.DBNull.Value) ? System.Convert.ToString(objItem["WAYBITMS_QTYINPLACE"]) : System.String.Empty);
-                        strPARTS_CERTIFICATE = ((objItem["PARTS_CERTIFICATE"] != System.DBNull.Value) ? System.Convert.ToString(objItem["PARTS_CERTIFICATE"]) : System.String.Empty);
-                        strWAYBITMS_NOTES = ((objItem["WAYBITMS_NOTES"] != System.DBNull.Value) ? System.Convert.ToString(objItem["WAYBITMS_NOTES"]) : System.String.Empty);
-                        dblWAYBITMS_PRICEWITHOUTNDS = ((objItem["WAYBITMS_PRICEWITHOUTNDS"] != System.DBNull.Value) ? System.Convert.ToDouble(objItem["WAYBITMS_PRICEWITHOUTNDS"]) : 0);
-                        strCOUNTRY_NAME = ((objItem["COUNTRY_NAME"] != System.DBNull.Value) ? System.Convert.ToString(objItem["COUNTRY_NAME"]) : System.String.Empty);
-                        uuidParts_Guid = ((objItem["Parts_Guid"] != System.DBNull.Value) ? (System.Guid)objItem["Parts_Guid"] : System.Guid.Empty);
-                        strParts_Barcode = ((objItem["Parts_Barcode"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Parts_Barcode"]) : System.String.Empty);
-                        strParts_BarcodeList = ((objItem["Parts_BarcodeList"] != System.DBNull.Value) ? System.Convert.ToString(objItem["Parts_BarcodeList"]) : System.String.Empty);
-
-                        objList.Add(new WaybillItemForExport(iWAYBITMS_ID, iPARTS_ID, strPARTS_FULLNAME,
-                                        strOWNER_NAME, strMEASURE_SHORTNAME, dblWAYBITMS_QUANTITY,
-                                        dblWAYBITMS_BASEPRICE, strWAYBITMS_PERCENT, dblWAYBITMS_DOUBLEPERCENT,
-                                        dblWAYBITMS_TOTALPRICEWITHOUTNDS, dblWAYBITMS_NDS, strWAYBITMS_STRNDS,
-                                        dblWAYBITMS_NDSTOTALPRICE, dblWAYBITMS_TOTALPRICE, dblWAYBITMS_WEIGHT,
-                                        strWAYBITMS_PLACES, iWAYBITMS_INTPLACES, strWAYBITMS_TARA,
-                                        strWAYBITMS_QTYINPLACE, strPARTS_CERTIFICATE, strWAYBITMS_NOTES,
-                                        dblWAYBITMS_PRICEWITHOUTNDS, strCOUNTRY_NAME, uuidParts_Guid,
-                                        strParts_Barcode, strParts_BarcodeList));
-
-                    }
-                }
-
-                dtList = null;
-
-            }
-            catch (System.Exception f)
-            {
-                strErr += (String.Format("\nНе удалось получить приложение к накладной.\nТекст ошибки: {0}", f.Message));
+                strErr += (String.Format("\nНе удалось получить приложение к накладной на внутреннее перемещение.\nТекст ошибки: {0}", f.Message));
             }
             return objList;
         }
@@ -320,50 +205,50 @@ namespace ERP_Mercury.Common
         /// <summary>
         /// Преобразует список записей к табличному виду
         /// </summary>
-        /// <param name="objWaybillItemsList">список строк из приложения к накладной</param>
+        /// <param name="objWaybillItemsList">список строк из приложения к накладной на внутреннее перемещение</param>
         /// <param name="strErr">сообщение об ошибке</param>
         /// <returns>таблица с приложением к накладной</returns>
-        public static System.Data.DataTable ConvertListToTable(List<CWaybillItem> objWaybillItemsList, ref System.String strErr)
+        public static System.Data.DataTable ConvertListToTable(List<CIntWaybillItem> objIntWaybillItemsList, ref System.String strErr)
         {
             System.Data.DataTable objTable = new System.Data.DataTable();
             try
             {
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
-                objTable.Columns.Add(new System.Data.DataColumn("SupplItem_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntOrderItem_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
                 objTable.Columns.Add(new System.Data.DataColumn("Parts_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
                 objTable.Columns.Add(new System.Data.DataColumn("Measure_Guid", typeof(System.Data.SqlTypes.SqlGuid)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_Quantity", typeof(int)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_RetQuantity", typeof(int)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_PriceImporter", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_Price", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_Discount", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_DiscountPrice", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_CurrencyPrice", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_CurrencyDiscountPrice", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_NDSPercent", typeof(System.Data.SqlTypes.SqlMoney)));
-                objTable.Columns.Add(new System.Data.DataColumn("WaybItem_Id", typeof(int)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_Quantity", typeof(int)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_RetQuantity", typeof(int)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_PriceImporter", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_Price", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_Discount", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_DiscountPrice", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_RetailPrice", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_NDSPercent", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_MarkUpPercent", typeof(System.Data.SqlTypes.SqlMoney)));
+                objTable.Columns.Add(new System.Data.DataColumn("IntWaybItem_Id", typeof(int)));
 
                 System.Data.DataRow newRow = null;
-                foreach (CWaybillItem objItem in objWaybillItemsList)
+                foreach (CIntWaybillItem objItem in objIntWaybillItemsList)
                 {
                     newRow = objTable.NewRow();
-                    newRow["WaybItem_Guid"] = objItem.ID;
-                    newRow["SupplItem_Guid"] = objItem.SupplItemID;
+                    newRow["IntWaybItem_Guid"] = objItem.ID;
+                    newRow["IntOrderItem_Guid"] = objItem.IntOrderItemID;
                     newRow["Parts_Guid"] = objItem.Product.ID;
                     newRow["Measure_Guid"] = objItem.Measure.ID;
-                    newRow["WaybItem_Quantity"] = objItem.Quantity;
-                    newRow["WaybItem_RetQuantity"] = objItem.QuantityReturn;
-                    newRow["WaybItem_PriceImporter"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceImporter;
-                    newRow["WaybItem_Price"] = (System.Data.SqlTypes.SqlMoney)objItem.Price;
-                    newRow["WaybItem_Discount"] = (System.Data.SqlTypes.SqlMoney)objItem.DiscountPercent;
-                    newRow["WaybItem_DiscountPrice"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceWithDiscount;
-                    newRow["WaybItem_CurrencyPrice"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceInAccountingCurrency;
-                    newRow["WaybItem_CurrencyDiscountPrice"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceWithDiscountInAccountingCurrency;
-                    newRow["WaybItem_NDSPercent"] = (System.Data.SqlTypes.SqlMoney)objItem.NDSPercent;
-                    newRow["WaybItem_Id"] = objItem.Ib_ID;
+                    newRow["IntWaybItem_Quantity"] = objItem.Quantity;
+                    newRow["IntWaybItem_RetQuantity"] = objItem.QuantityReturn;
+                    newRow["IntWaybItem_PriceImporter"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceImporter;
+                    newRow["IntWaybItem_Price"] = (System.Data.SqlTypes.SqlMoney)objItem.Price;
+                    newRow["IntWaybItem_Discount"] = (System.Data.SqlTypes.SqlMoney)objItem.DiscountPercent;
+                    newRow["IntWaybItem_DiscountPrice"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceWithDiscount;
+                    newRow["IntWaybItem_RetailPrice"] = (System.Data.SqlTypes.SqlMoney)objItem.PriceRetail;
+                    newRow["IntWaybItem_NDSPercent"] = (System.Data.SqlTypes.SqlMoney)objItem.NDSPercent;
+                    newRow["IntWaybItem_MarkUpPercent"] = (System.Data.SqlTypes.SqlMoney)objItem.MarkUpPercent;
+                    newRow["IntWaybItem_Id"] = objItem.Ib_ID;
                     objTable.Rows.Add(newRow);
                 }
-                if (objWaybillItemsList.Count > 0)
+                if (objIntWaybillItemsList.Count > 0)
                 {
                     objTable.AcceptChanges();
                 }
@@ -435,6 +320,10 @@ namespace ERP_Mercury.Common
         {
             get { return ((WaybillShipMode == null) ? System.String.Empty : WaybillShipMode.Name); }
         }
+        /// <summary>
+        /// Признак "Накладную можно отгружать"
+        /// </summary>
+        public System.Boolean CanShip { get; set; }
         #endregion
 
         #region Торговый представитель
@@ -655,7 +544,7 @@ namespace ERP_Mercury.Common
             SumDiscount = 0;
             SumWaybillInAccountingCurrency = 0;
             SumDiscountInAccountingCurrency = 0;
-
+            CanShip = false;
         }
         #endregion
 
@@ -869,6 +758,76 @@ namespace ERP_Mercury.Common
             {
             }
             return iRet;
+        }
+        #endregion
+
+        #region Установка признака "накладную можно отгружать"
+        /// <summary>
+        /// Проверка значений перед установкой признака "накладную можно отгружать"
+        /// </summary>
+        /// <param name="WaybillGuidList">список идентификаторов  накладных</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - проверка пройдена; false - проверка не пройдена</returns>
+        public static System.Boolean CheckAllPropertiesBeforeSetShipRemark(
+            System.Data.DataTable WaybillGuidList, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                if ((WaybillGuidList == null) || (WaybillGuidList.Rows.Count == 0))
+                {
+                    strErr = "Список накладных не содержит записей. Добавьте, пожалуйста, хотя бы одну позицию.";
+                    return bRet;
+                }
+
+                bRet = true;
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "CheckAllPropertiesBeforeSetShipRemark.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+            }
+
+            return bRet;
+        }
+        /// <summary>
+        /// Установка признака "накладную можно отгружать"
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="WaybillGuidList">список идентификаторов накладных</param>
+        /// <param name="CanShip">признак "накладную можно отгружать"</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean SetShipRemarkForWaybillList(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+             List<System.Guid> WaybillGuidList, System.Boolean CanShip, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                System.Data.DataTable dtWaybillList = CWaybill.ConvertWaybillGuidListToTable(WaybillGuidList, ref strErr);
+
+                if (dtWaybillList != null)
+                {
+                    if (CheckAllPropertiesBeforeSetShipRemark(dtWaybillList, ref strErr) == true)
+                    {
+                        bRet = CIntWaybillDataBaseModel.SetShipRemarkForWaybillList(objProfile, null,
+                           dtWaybillList, CanShip, ref strErr);
+                    }
+                }
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
         }
         #endregion
 

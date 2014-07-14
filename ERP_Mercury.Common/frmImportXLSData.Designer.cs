@@ -33,6 +33,8 @@
             this.openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.toolTipController = new DevExpress.Utils.ToolTipController(this.components);
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
+            this.labelControl4 = new DevExpress.XtraEditors.LabelControl();
             this.cboxSettings = new DevExpress.XtraEditors.ComboBoxEdit();
             this.treeListImportOrder = new DevExpress.XtraTreeList.TreeList();
             this.colProductID = new DevExpress.XtraTreeList.Columns.TreeListColumn();
@@ -63,11 +65,6 @@
             this.btnLoadDataFromFile = new DevExpress.XtraEditors.SimpleButton();
             this.labelControl1 = new DevExpress.XtraEditors.LabelControl();
             this.listEditLog = new DevExpress.XtraEditors.ListBoxControl();
-            this.tabControl = new DevExpress.XtraTab.XtraTabControl();
-            this.tabImportDataInOrder = new DevExpress.XtraTab.XtraTabPage();
-            this.tabTools = new DevExpress.XtraTab.XtraTabPage();
-            this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
-            this.labelControl4 = new DevExpress.XtraEditors.LabelControl();
             this.lblOrderInfo = new DevExpress.XtraEditors.LabelControl();
             this.labelControl7 = new DevExpress.XtraEditors.LabelControl();
             this.tableLayoutPanel5 = new System.Windows.Forms.TableLayoutPanel();
@@ -79,7 +76,11 @@
             this.colSettingsDescription = new DevExpress.XtraTreeList.Columns.TreeListColumn();
             this.repositoryItemMemoEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemMemoEdit();
             this.repositoryItemCheckEdit1 = new DevExpress.XtraEditors.Repository.RepositoryItemCheckEdit();
+            this.tabControl = new DevExpress.XtraTab.XtraTabControl();
+            this.tabImportDataInOrder = new DevExpress.XtraTab.XtraTabPage();
+            this.tabTools = new DevExpress.XtraTab.XtraTabPage();
             this.tableLayoutPanel1.SuspendLayout();
+            this.tableLayoutPanel7.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.cboxSettings.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.treeListImportOrder)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCalcEdit2)).BeginInit();
@@ -92,16 +93,15 @@
             this.tableLayoutPanel4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.cboxSheet.Properties)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.listEditLog)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tabControl)).BeginInit();
-            this.tabControl.SuspendLayout();
-            this.tabImportDataInOrder.SuspendLayout();
-            this.tabTools.SuspendLayout();
-            this.tableLayoutPanel7.SuspendLayout();
             this.tableLayoutPanel5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.treeListSettings)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCalcEdit1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemMemoEdit1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCheckEdit1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tabControl)).BeginInit();
+            this.tabControl.SuspendLayout();
+            this.tabImportDataInOrder.SuspendLayout();
+            this.tabTools.SuspendLayout();
             this.SuspendLayout();
             // 
             // openFileDialog
@@ -145,15 +145,43 @@
             this.toolTipController.SetSuperTip(this.tableLayoutPanel1, null);
             this.tableLayoutPanel1.TabIndex = 2;
             // 
+            // tableLayoutPanel7
+            // 
+            this.tableLayoutPanel7.ColumnCount = 2;
+            this.tableLayoutPanel7.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 116F));
+            this.tableLayoutPanel7.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel7.Controls.Add(this.labelControl4, 0, 0);
+            this.tableLayoutPanel7.Controls.Add(this.cboxSettings, 1, 0);
+            this.tableLayoutPanel7.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel7.Location = new System.Drawing.Point(0, 20);
+            this.tableLayoutPanel7.Margin = new System.Windows.Forms.Padding(0);
+            this.tableLayoutPanel7.Name = "tableLayoutPanel7";
+            this.tableLayoutPanel7.RowCount = 1;
+            this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel7.Size = new System.Drawing.Size(667, 25);
+            this.toolTipController.SetSuperTip(this.tableLayoutPanel7, null);
+            this.tableLayoutPanel7.TabIndex = 42;
+            // 
+            // labelControl4
+            // 
+            this.labelControl4.Anchor = System.Windows.Forms.AnchorStyles.Left;
+            this.labelControl4.Appearance.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Bold);
+            this.labelControl4.Appearance.Options.UseFont = true;
+            this.labelControl4.Location = new System.Drawing.Point(3, 6);
+            this.labelControl4.Name = "labelControl4";
+            this.labelControl4.Size = new System.Drawing.Size(103, 13);
+            this.labelControl4.TabIndex = 36;
+            this.labelControl4.Text = "Вариант импорта:";
+            // 
             // cboxSettings
             // 
             this.cboxSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-            this.cboxSettings.Location = new System.Drawing.Point(121, 2);
+            this.cboxSettings.Location = new System.Drawing.Point(119, 3);
             this.cboxSettings.Name = "cboxSettings";
             this.cboxSettings.Properties.Buttons.AddRange(new DevExpress.XtraEditors.Controls.EditorButton[] {
             new DevExpress.XtraEditors.Controls.EditorButton(DevExpress.XtraEditors.Controls.ButtonPredefines.Combo)});
             this.cboxSettings.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
-            this.cboxSettings.Size = new System.Drawing.Size(543, 20);
+            this.cboxSettings.Size = new System.Drawing.Size(545, 20);
             this.cboxSettings.TabIndex = 41;
             this.cboxSettings.SelectedValueChanged += new System.EventHandler(this.cboxSettings_SelectedValueChanged);
             // 
@@ -499,61 +527,6 @@
             this.listEditLog.Size = new System.Drawing.Size(661, 94);
             this.listEditLog.TabIndex = 49;
             // 
-            // tabControl
-            // 
-            this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tabControl.Location = new System.Drawing.Point(0, 0);
-            this.tabControl.Name = "tabControl";
-            this.tabControl.SelectedTabPage = this.tabImportDataInOrder;
-            this.tabControl.Size = new System.Drawing.Size(676, 654);
-            this.tabControl.TabIndex = 2;
-            this.tabControl.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
-            this.tabImportDataInOrder,
-            this.tabTools});
-            this.tabControl.Text = "xtraTabControl1";
-            // 
-            // tabImportDataInOrder
-            // 
-            this.tabImportDataInOrder.Controls.Add(this.tableLayoutPanel1);
-            this.tabImportDataInOrder.Name = "tabImportDataInOrder";
-            this.tabImportDataInOrder.Size = new System.Drawing.Size(667, 623);
-            this.tabImportDataInOrder.Text = "Импорт данных";
-            // 
-            // tabTools
-            // 
-            this.tabTools.Controls.Add(this.tableLayoutPanel5);
-            this.tabTools.Name = "tabTools";
-            this.tabTools.Size = new System.Drawing.Size(667, 623);
-            this.tabTools.Text = "Настройки для импорта данных";
-            // 
-            // tableLayoutPanel7
-            // 
-            this.tableLayoutPanel7.ColumnCount = 2;
-            this.tableLayoutPanel7.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 116F));
-            this.tableLayoutPanel7.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel7.Controls.Add(this.labelControl4, 0, 0);
-            this.tableLayoutPanel7.Controls.Add(this.cboxSettings, 1, 0);
-            this.tableLayoutPanel7.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel7.Location = new System.Drawing.Point(0, 20);
-            this.tableLayoutPanel7.Margin = new System.Windows.Forms.Padding(0);
-            this.tableLayoutPanel7.Name = "tableLayoutPanel7";
-            this.tableLayoutPanel7.RowCount = 1;
-            this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel7.Size = new System.Drawing.Size(667, 25);
-            this.toolTipController.SetSuperTip(this.tableLayoutPanel7, null);
-            this.tableLayoutPanel7.TabIndex = 42;
-            // 
-            // labelControl4
-            // 
-            this.labelControl4.Anchor = System.Windows.Forms.AnchorStyles.Left;
-            this.labelControl4.Appearance.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Bold);
-            this.labelControl4.Appearance.Options.UseFont = true;
-            this.labelControl4.Location = new System.Drawing.Point(3, 6);
-            this.labelControl4.Name = "labelControl4";
-            this.labelControl4.Size = new System.Drawing.Size(103, 13);
-            this.labelControl4.TabIndex = 36;
-            this.labelControl4.Text = "Вариант импорта:";
-            // 
             // lblOrderInfo
             // 
             this.lblOrderInfo.Anchor = System.Windows.Forms.AnchorStyles.Left;
@@ -672,6 +645,33 @@
             this.repositoryItemCheckEdit1.AutoHeight = false;
             this.repositoryItemCheckEdit1.Name = "repositoryItemCheckEdit1";
             // 
+            // tabControl
+            // 
+            this.tabControl.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl.Location = new System.Drawing.Point(0, 0);
+            this.tabControl.Name = "tabControl";
+            this.tabControl.SelectedTabPage = this.tabImportDataInOrder;
+            this.tabControl.Size = new System.Drawing.Size(676, 654);
+            this.tabControl.TabIndex = 2;
+            this.tabControl.TabPages.AddRange(new DevExpress.XtraTab.XtraTabPage[] {
+            this.tabImportDataInOrder,
+            this.tabTools});
+            this.tabControl.Text = "xtraTabControl1";
+            // 
+            // tabImportDataInOrder
+            // 
+            this.tabImportDataInOrder.Controls.Add(this.tableLayoutPanel1);
+            this.tabImportDataInOrder.Name = "tabImportDataInOrder";
+            this.tabImportDataInOrder.Size = new System.Drawing.Size(667, 623);
+            this.tabImportDataInOrder.Text = "Импорт данных";
+            // 
+            // tabTools
+            // 
+            this.tabTools.Controls.Add(this.tableLayoutPanel5);
+            this.tabTools.Name = "tabTools";
+            this.tabTools.Size = new System.Drawing.Size(667, 623);
+            this.tabTools.Text = "Настройки для импорта данных";
+            // 
             // frmImportXLSData
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -686,6 +686,8 @@
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.frmImportXLSData_FormClosed);
             this.tableLayoutPanel1.ResumeLayout(false);
             this.tableLayoutPanel1.PerformLayout();
+            this.tableLayoutPanel7.ResumeLayout(false);
+            this.tableLayoutPanel7.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.cboxSettings.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.treeListImportOrder)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCalcEdit2)).EndInit();
@@ -700,17 +702,15 @@
             this.tableLayoutPanel4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.cboxSheet.Properties)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.listEditLog)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.tabControl)).EndInit();
-            this.tabControl.ResumeLayout(false);
-            this.tabImportDataInOrder.ResumeLayout(false);
-            this.tabTools.ResumeLayout(false);
-            this.tableLayoutPanel7.ResumeLayout(false);
-            this.tableLayoutPanel7.PerformLayout();
             this.tableLayoutPanel5.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.treeListSettings)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCalcEdit1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemMemoEdit1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.repositoryItemCheckEdit1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.tabControl)).EndInit();
+            this.tabControl.ResumeLayout(false);
+            this.tabImportDataInOrder.ResumeLayout(false);
+            this.tabTools.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
