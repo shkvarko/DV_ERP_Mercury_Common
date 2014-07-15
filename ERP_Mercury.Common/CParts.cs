@@ -1417,6 +1417,81 @@ namespace ERP_Mercury.Common
             }
             return objRet;
         }
+        /// <summary>
+        /// Возвращает список товарных групп
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="LotOrderId">УИ заказа</param>
+        /// <returns>список товарных групп</returns>
+        public static List<CProductType> GetProductTypeListForLotOrder(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL, 
+            System.Guid LotOrderId )
+        {
+            List<CProductType> objList = new List<CProductType>();
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        DevExpress.XtraEditors.XtraMessageBox.Show(
+                            "Не удалось получить соединение с базой данных.", "Внимание",
+                            System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        return objList;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetPartTypeForLotOrder]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@LotOrder_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000));
+                cmd.Parameters["@ERROR_MES"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@LotOrder_Guid"].Value = LotOrderId;
+                System.Data.SqlClient.SqlDataReader rs = cmd.ExecuteReader();
+                if (rs.HasRows)
+                {
+                    while (rs.Read())
+                    {
+                        objList.Add(new CProductType(
+                            (System.Guid)rs["Parttype_Guid"],
+                            (System.String)rs["Parttype_Name"],
+                            System.Convert.ToInt32(rs["Parttype_Id"]),
+                            (System.String)rs["Parttype_DemandsName"],
+                            System.Convert.ToDouble(rs["Parttype_NDSRate"]),
+                            ((rs["Parttype_Description"] == System.DBNull.Value) ? "" : (System.String)rs["Parttype_Description"]),
+                            System.Convert.ToBoolean(rs["Parttype_IsActive"])
+                            )
+                            );
+                    }
+                }
+                rs.Dispose();
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    DBConnection.Close();
+                }
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "Не удалось получить список товарных групп для заказа.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            return objList;
+        }
+
         #endregion
 
         #region IsAllParametersValid
@@ -3523,6 +3598,89 @@ namespace ERP_Mercury.Common
             }
             return;
         }
+        /// <summary>
+        /// Возвращает список товарных марок для заказа поставщику
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="LotOrderId">УИ заказа поставщику</param>
+        /// <returns>список товарных марок</returns>
+        public static List<CProductTradeMark> GetProductTradeMarkListForLotOrder(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL, 
+            System.Guid LotOrderId)
+        {
+            List<CProductTradeMark> objList = new List<CProductTradeMark>();
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        DevExpress.XtraEditors.XtraMessageBox.Show(
+                            "Не удалось получить соединение с базой данных.", "Внимание",
+                            System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        return objList;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetProductTradeMarkForLotOrder]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@LotOrder_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters["@ERROR_MES"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@LotOrder_Guid"].Value = LotOrderId; 
+                System.Data.SqlClient.SqlDataReader rs = cmd.ExecuteReader();
+                if (rs.HasRows)
+                {
+                    while (rs.Read())
+                    {
+                        objList.Add(new CProductTradeMark(
+                            (System.Guid)rs["Owner_Guid"],
+                            (System.String)rs["Owner_Name"], (System.String)rs["Owner_ShortName"],
+                            System.Convert.ToInt32(rs["Owner_Id"]),
+                            ((rs["Owner_ProcessDaysCount"] == System.DBNull.Value) ? 0 : System.Convert.ToInt32(rs["Owner_ProcessDaysCount"])),
+                            ((rs["Owner_Description"] == System.DBNull.Value) ? "" : (System.String)rs["Owner_Description"]),
+                            System.Convert.ToBoolean(rs["Owner_IsActive"]),
+                            new CProductVtm(
+                                (System.Guid)rs["Vtm_Guid"],
+                                (System.String)rs["Vtm_Name"],
+                                System.Convert.ToInt32(rs["Vtm_Id"]),
+                                (System.String)rs["Vtm_ShortName"],
+                                ((rs["Vtm_Description"] == System.DBNull.Value) ? "" : (System.String)rs["Vtm_Description"]),
+                                System.Convert.ToBoolean(rs["Vtm_IsActive"])
+                                )
+                            )
+                            );
+                    }
+                }
+                rs.Dispose();
+
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    DBConnection.Close();
+                }
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "Не удалось получить список товарных марок.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            return objList;
+        }
+
         #endregion
 
         #region IsAllParametersValid
