@@ -18,7 +18,13 @@ namespace ERP_Mercury.Common
         Unkown = -1,
         ImportDataInOrderByIDSettings = 0,
         ImportDataInOrderSettings = 1
+    }
 
+    public enum enumImportOrderType
+    {
+        Unkown = -1,
+        Order = 0,
+        intOrder = 1
     }
 
     public partial class frmImportXLSData : DevExpress.XtraEditors.XtraForm
@@ -52,6 +58,7 @@ namespace ERP_Mercury.Common
         private System.Data.DataTable m_objdtOrderItems;
         private System.Double m_dblDiscountPercent;
         private System.Boolean m_bcheckMultiplicity;
+        private CPriceType m_objPriceType;
 
         private List<CCustomer> m_objCustomerList;
 
@@ -60,8 +67,11 @@ namespace ERP_Mercury.Common
         private const System.String strCustomerPrefix = "Клиент: ";
         private const System.String strRttPrefix = "РТТ: ";
         private enumImportCustomerOrderMode m_ImportCustomerOrderMode;
+        private enumImportOrderType m_ImportOrderType;
+
         private const System.String strImportDataInOrderSettings = "ImportDataInOrderSettings";
         private const System.String strImportDataInOrderByIDSettings = "ImportDataInOrderByIDSettings";
+        private const System.String strImportDataInIntOrderByIDSettings = "ImportDataInIntOrderByIDSettings";
         #endregion
 
         #region Конструктор
@@ -99,6 +109,7 @@ namespace ERP_Mercury.Common
             m_bcheckMultiplicity = false;
             SheetList = null;
             m_ImportCustomerOrderMode = enumImportCustomerOrderMode.Unkown;
+            m_objPriceType = null;
         }
 
         private System.Reflection.Assembly MyResolveEventHandler(object sender, ResolveEventArgs args)
@@ -183,11 +194,13 @@ namespace ERP_Mercury.Common
                 m_objSelectedStock = objStock;
                 m_iCustomerId = 0;
                 m_iPayFormId = iPayFormId;
+                m_ImportOrderType = enumImportOrderType.Order;
                 DeparCode = strDeparCode;
                 m_objPaymentType = objPaymentType;
                 m_dblDiscountPercent = dblDiscountPercent;
                 m_objdtOrderItems = objdtOrderItems;
                 m_bcheckMultiplicity = bcheckMultiplicity;
+                m_ImportOrderType = enumImportOrderType.Unkown;
 
                 lblOrderInfo.Text = strDeparCode + " " + ((objCustomer == null) ? "" : objCustomer.FullName) + " " +
                     ((SelectedRtt == null) ? "" : SelectedRtt.VisitingCard);
@@ -222,6 +235,62 @@ namespace ERP_Mercury.Common
             return;
 
         }
+
+        /// <summary>
+        /// Открывает форму в режиме "импорт приложения в заказ на внутреннее перемещение"
+        /// </summary>
+        /// <param name="objSrcStock">Склад-источник</param>
+        /// <param name="dblDiscountPercent">Скидка, %</param>
+        /// <param name="objdtOrderItems">приложение к заказу</param>
+        /// <param name="strFileName">путь к файлу MS Excel с данными для импорта</param>
+        /// <param name="iSelectedSheetId">номер выбранного листа в файле MS Excel</param>
+        /// <param name="SheetList">список листов в файле MS Excel</param>
+        /// <param name="bcheckMultiplicity">признак "учитывать кратность в упаковке"</param>
+        /// <param name="objPriceType">уровень цены</param>
+        /// <param name="strDocNum">№ заказа</param>
+        public void OpenForImportPartsInInOrder(CStock objSrcStock, 
+            System.Double dblDiscountPercent, System.Data.DataTable objdtOrderItems, System.String strFileName,
+            System.Int32 iSelectedSheetId, List<System.String> SheetList, System.Boolean bcheckMultiplicity, 
+            CPriceType objPriceType, System.String strDocNum
+            )
+        {
+            try
+            {
+                m_objSelectedStock = objSrcStock;
+                m_iCustomerId = 0;
+                m_ImportOrderType = enumImportOrderType.intOrder;
+                m_dblDiscountPercent = dblDiscountPercent;
+                m_objdtOrderItems = objdtOrderItems;
+                m_bcheckMultiplicity = bcheckMultiplicity;
+                m_objPriceType = objPriceType;
+
+                lblOrderInfo.Text = (String.Format("Заказ №{0} перемещение со склада {1}-{2}", strDocNum, objSrcStock.CompanyAbbr, objSrcStock.WareHouseName ));
+
+                SetInitialParams();
+
+                txtID_Ib.Text = strFileName;
+                cboxSheet.Properties.Items.Clear();
+                if (SheetList != null)
+                {
+                    cboxSheet.Properties.Items.AddRange(SheetList);
+                    cboxSheet.SelectedIndex = iSelectedSheetId;
+                }
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                    "OpenForImportPartsInInOrder.\nТекст ошибки: " + f.Message, "Ошибка",
+                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+                ShowDialog();
+            }
+
+            return;
+
+        }
+        
         #endregion
 
         #region Первоначальные установки
@@ -237,8 +306,20 @@ namespace ERP_Mercury.Common
 
                 System.String strErr = System.String.Empty;
                 List<System.String> SettingNamesListForInitParams = new List<string>();
-                SettingNamesListForInitParams.Add(strImportDataInOrderByIDSettings);
-                SettingNamesListForInitParams.Add(strImportDataInOrderSettings);
+
+                switch (m_ImportOrderType)
+                {
+                    case enumImportOrderType.Order:
+                        SettingNamesListForInitParams.Add(strImportDataInOrderByIDSettings);
+                        SettingNamesListForInitParams.Add(strImportDataInOrderSettings);
+                        break;
+                    case enumImportOrderType.intOrder:
+                        SettingNamesListForInitParams.Add(strImportDataInIntOrderByIDSettings);
+                        break;
+                    default:
+                        break;
+                }
+
                 List<CSettingForImportData> objSettingsList = CSettingForImportData.GetSettingslist(m_objProfile, null, SettingNamesListForInitParams, ref strErr);
                 if ((objSettingsList != null) && (objSettingsList.Count > 0))
                 {
@@ -250,7 +331,17 @@ namespace ERP_Mercury.Common
                         }
                     }
 
-                    cboxSettings.SelectedItem = cboxSettings.Properties.Items.Cast<CSettingForImportData>().SingleOrDefault<CSettingForImportData>(x => x.Name == strImportDataInOrderByIDSettings);
+                    switch (m_ImportOrderType)
+                    {
+                        case enumImportOrderType.Order:
+                            cboxSettings.SelectedItem = cboxSettings.Properties.Items.Cast<CSettingForImportData>().SingleOrDefault<CSettingForImportData>(x => x.Name == strImportDataInOrderByIDSettings);
+                            break;
+                        case enumImportOrderType.intOrder:
+                            cboxSettings.SelectedItem = ((cboxSettings.Properties.Items.Count > 0) ? cboxSettings.Properties.Items[0] : null);
+                            break;
+                        default:
+                            break;
+                    }
                 }
                 else
                 {
@@ -293,6 +384,11 @@ namespace ERP_Mercury.Common
                 else if (m_objSettingForImportData.Name == strImportDataInOrderSettings)
                 {
                     m_ImportCustomerOrderMode = enumImportCustomerOrderMode.ImportDataInOrderSettings;
+                    checkEditImportPrices.Checked = true;
+                }
+                else if (m_objSettingForImportData.Name == strImportDataInIntOrderByIDSettings)
+                {
+                    m_ImportCustomerOrderMode = enumImportCustomerOrderMode.ImportDataInOrderByIDSettings;
                     checkEditImportPrices.Checked = true;
                 }
 
@@ -379,7 +475,7 @@ namespace ERP_Mercury.Common
             if (System.IO.File.Exists(strFileName) == false)
             {
                 DevExpress.XtraEditors.XtraMessageBox.Show(
-                     "файл \"" + strFileName + "\" не найден.", "Ошибка",
+                     String.Format("файл \"{0}\" не найден.", strFileName), "Ошибка",
                      System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 return;
             }
@@ -387,8 +483,6 @@ namespace ERP_Mercury.Common
             Excel.Application oXL = null;
             Excel._Workbook oWB;
 
-            System.Int32 iStartRow = 8;
-            System.Int32 iCurrentRow = iStartRow;
             object m = Type.Missing;
 
             try
@@ -841,11 +935,275 @@ namespace ERP_Mercury.Common
             return;
         }
 
+        /// <summary>
+        /// Считывает информацию из фала MS Excel
+        /// </summary>
+        /// <param name="strFileName">имя файла MS Excel</param>
+        private void ReadDataFromXLSFileForIntOrderByID(System.String strFileName)
+        {
+            this.Cursor = Cursors.WaitCursor;
+            System.String strCaption = this.Text;
+
+            System.IO.FileInfo newFile = new System.IO.FileInfo(strFileName);
+            if (newFile.Exists == false)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                    "Ошибка экспорта в MS Excel.\n\nНе найден файл: " + strFileName, "Ошибка",
+                   System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+
+            //treeListImportOrder.CellValueChanged -= new DevExpress.XtraTreeList.CellValueChangedEventHandler(treeListImportOrder_CellValueChanged);
+            treeListImportOrder.Nodes.Clear();
+            listEditLog.Items.Clear();
+
+            try
+            {
+                this.Cursor = Cursors.WaitCursor;
+                treeListImportOrder.Nodes.Clear();
+
+                System.Int32 iStartRow = GetSettingValueByName(CSettingForImportData.strFieldNameSTARTROW);
+                System.Int32 iColumnARTICLE = GetSettingValueByName(CSettingForImportData.strFieldNameARTICLE);
+                System.Int32 iColumnNAME2 = GetSettingValueByName(CSettingForImportData.strFieldNameNAME2);
+                System.Int32 iColumnPRICE = GetSettingValueByName(CSettingForImportData.strFieldNamePRICE);
+                System.Int32 iColumnQUANTITY = GetSettingValueByName(CSettingForImportData.strFieldNameQUANTITY);
+                System.Int32 iColumnMARKUP = GetSettingValueByName(CSettingForImportData.strFieldNameMARKUP);
+                System.Int32 iColumnPARTS_ID = GetSettingValueByName(CSettingForImportData.strFieldNamePARTS_ID);
+
+                System.Int32 iRowCustomerId = GetSettingValueByName(CSettingForImportData.strFieldNameCUSTOMER_ID);
+                System.Int32 iRowRttCode = GetSettingValueByName(CSettingForImportData.strFieldNameRTT_CODE);
+                System.Int32 iRowDepartCode = GetSettingValueByName(CSettingForImportData.strFieldNameDEPART_CODE);
+                System.String strARTICLE = "";
+                System.String strNAME2 = "";
+                System.String strQUANTITY = "";
+                System.String strPRICE = "";
+                System.String strMARKUP = "";
+                System.String strPARTS_ID = "";
+
+                System.Int32 iCurrentRow = iStartRow;
+
+                using (ExcelPackage package = new ExcelPackage(newFile))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[cboxSheet.Text];
+                    if (worksheet != null)
+                    {
+
+                        System.Boolean bStopRead = false;
+                        System.Boolean bErrExists = false;
+                        System.String strFrstColumn = "";
+                        System.Int32 i = 1;
+                        System.Decimal iQuantity = 0;
+                        System.Double dblPRICE = 0;
+                        System.Double dblMARKUP = 0;
+                        System.Int32 iPartsId = 0;
+                        System.Decimal dclmultiplicity = 0;
+                        CProduct objProduct = null;
+
+                        while (bStopRead == false)
+                        {
+                            bErrExists = false;
+                            strARTICLE = "";
+                            strNAME2 = "";
+                            strQUANTITY = "";
+                            strPRICE = "";
+                            strMARKUP = "";
+                            strPARTS_ID = "";
+
+                            // пробежим по строкам и считаем информацию
+                            strFrstColumn = System.Convert.ToString(worksheet.Cells[iCurrentRow, 1].Value);
+                            if (strFrstColumn == "")
+                            {
+                                bStopRead = true;
+                            }
+                            else
+                            {
+                                if (m_ImportCustomerOrderMode == enumImportCustomerOrderMode.ImportDataInOrderSettings)
+                                {
+                                    strARTICLE = System.Convert.ToString(worksheet.Cells[iCurrentRow, iColumnARTICLE].Value);
+                                    strNAME2 = System.Convert.ToString(worksheet.Cells[iCurrentRow, iColumnNAME2].Value);
+                                    strMARKUP = System.Convert.ToString(worksheet.Cells[iCurrentRow, iColumnMARKUP].Value);
+                                }
+                                else if (m_ImportCustomerOrderMode == enumImportCustomerOrderMode.ImportDataInOrderByIDSettings)
+                                {
+                                    strPARTS_ID = System.Convert.ToString(worksheet.Cells[iCurrentRow, iColumnPARTS_ID].Value);
+                                    strQUANTITY = System.Convert.ToString(worksheet.Cells[iCurrentRow, iColumnQUANTITY].Value);
+                                    strPRICE = System.Convert.ToString(worksheet.Cells[iCurrentRow, iColumnPRICE].Value);
+                                }
+
+                                iQuantity = 0;
+                                iPartsId = 0;
+                                dblPRICE = 0;
+                                dblMARKUP = 0;
+                                objProduct = null;
+
+                                // преобразуем строки в числа
+                                if (strPARTS_ID == "")
+                                {
+                                    iPartsId = 0;
+                                }
+                                else
+                                {
+                                    // код товара в InterBase
+                                    try
+                                    {
+                                        iPartsId = System.Convert.ToInt32(strPARTS_ID);
+                                    }
+                                    catch
+                                    {
+                                        bErrExists = true;
+                                        listEditLog.Items.Add(String.Format("{0} ошибка преобразования кода товара в числовой формат.", i));
+                                    }
+                                }
+
+                                if (strQUANTITY == "")
+                                {
+                                    iQuantity = 0;
+                                    listEditLog.Items.Add(String.Format("{0} не указано количество.", i));
+                                }
+                                else
+                                {
+                                    // количество
+                                    try
+                                    {
+                                        iQuantity = System.Convert.ToDecimal(strQUANTITY);
+                                    }
+                                    catch
+                                    {
+                                        bErrExists = true;
+                                        iQuantity = 0;
+                                        listEditLog.Items.Add(String.Format("{0} ошибка преобразования количества товара в числовой формат.", i));
+                                    }
+                                }
+
+                                // цена
+                                try
+                                {
+                                    dblPRICE = System.Convert.ToDouble(strPRICE);
+                                    if (dblPRICE < 0) { dblPRICE = 0; }
+                                }
+                                catch
+                                {
+                                    bErrExists = true;
+                                    dblPRICE = 0;
+                                    listEditLog.Items.Add(String.Format("{0} ошибка преобразования цены  в числовой формат.", i));
+                                }
+                                // скидка
+                                try
+                                {
+                                    if (strMARKUP == "") { dblMARKUP = 0; }
+                                    else { dblMARKUP = System.Convert.ToDouble(strMARKUP); }
+                                }
+                                catch
+                                {
+                                    bErrExists = true;
+                                    listEditLog.Items.Add(String.Format("{0} ошибка преобразования скидки в числовой формат.", i));
+                                }
+
+                                if ((bErrExists == false) && (bStopRead == false) && (iQuantity > 0))
+                                {
+                                    objProduct = COrderRepository.GetPartsInstock(m_objProfile, null, strNAME2, strARTICLE, m_objSelectedStock.ID, iPartsId);
+
+                                    if (objProduct == null)
+                                    {
+                                        bErrExists = true;
+                                        listEditLog.Items.Add(String.Format("{0} товар не найдет. артикул товара: {1} наименование: {2} код: {3}", i, strARTICLE, strNAME2, iPartsId));
+
+                                        treeListImportOrder.AppendNode(new object[] { null, iPartsId, strARTICLE, 
+                                                strNAME2, 0, 0, iQuantity, dblPRICE, ( System.Convert.ToDouble( iQuantity ) * dblPRICE ), "НЕ импортирован, товар не найдет"  }, null).Tag = null;
+
+                                        treeListImportOrder.Refresh();
+
+                                        listEditLog.Items.Add(String.Format("{0} OK ", i));
+                                        listEditLog.Refresh();
+
+                                    }
+                                    else
+                                    {
+                                        dclmultiplicity = System.Convert.ToDecimal(objProduct.CustomerOrderMinRetailQty);
+
+                                        if ((m_bcheckMultiplicity == true) && (dclmultiplicity > 0))
+                                        {
+                                            if ((iQuantity % dclmultiplicity) != 0)
+                                            {
+                                                iQuantity = (((int)iQuantity / (int)dclmultiplicity) * dclmultiplicity) + dclmultiplicity;
+                                                if (iQuantity > System.Convert.ToDecimal(objProduct.CustomerOrderStockQty))
+                                                {
+                                                    iQuantity = System.Convert.ToDecimal(objProduct.CustomerOrderStockQty);
+                                                }
+                                            }
+                                        }
+
+                                        treeListImportOrder.AppendNode(new object[] { objProduct.ID, objProduct.ID_Ib, objProduct.Article, 
+                                                objProduct.Name, objProduct.CustomerOrderResQty, objProduct.CustomerOrderStockQty, 
+                                                iQuantity,  dblPRICE, ( System.Convert.ToDouble( iQuantity ) * dblPRICE ) }, null).Tag = objProduct;
+
+                                        treeListImportOrder.Refresh();
+
+                                        listEditLog.Items.Add(String.Format("{0} OK ", i));
+                                        listEditLog.Refresh();
+                                    }
+                                }
+                                else if ((bErrExists == true) && (bStopRead == false))
+                                {
+                                    // ошибка, необходимо пометить запись
+                                    treeListImportOrder.AppendNode(new object[] { null, iPartsId, strARTICLE, 
+                                                strNAME2, 0, 0, iQuantity, dblPRICE, "НЕ импортирован"  }, null).Tag = null;
+
+                                    treeListImportOrder.Refresh();
+
+                                    listEditLog.Items.Add(String.Format("{0} OK ", i));
+                                    listEditLog.Refresh();
+                                }
+
+                            }
+
+                            iCurrentRow++;
+                            i++;
+                            strFrstColumn = System.Convert.ToString(worksheet.Cells[iCurrentRow, 1].Value);
+                            listEditLog.Refresh();
+
+                            this.Text = String.Format("обрабатывается запись №{0}", i);
+                            this.Refresh();
+
+
+                        } //while (bStopRead == false)
+                    }
+                    worksheet = null;
+                }
+
+
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                    "Ошибка импорта данных из MS Excel.\n\nТекст ошибки: " + f.Message, "Ошибка",
+                   System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+                treeListImportOrder.BestFitColumns();
+                this.Text = strCaption;
+                this.Cursor = System.Windows.Forms.Cursors.Default;
+            }
+
+            return;
+        }
+
         private void btnLoadDataFromFile_Click(object sender, EventArgs e)
         {
             try
             {
-                ReadDataFromXLSFile(txtID_Ib.Text);
+                switch (m_ImportOrderType)
+                {
+                    case  enumImportOrderType.Order:
+                        ReadDataFromXLSFile(txtID_Ib.Text);
+                        break;
+                    case  enumImportOrderType.intOrder:
+                        ReadDataFromXLSFileForIntOrderByID(txtID_Ib.Text);
+                        break;
+                    default:
+                        break;
+                }
+
             }
             catch (System.Exception f)
             {
@@ -892,7 +1250,17 @@ namespace ERP_Mercury.Common
                     return;
                 }
 
-                ImportdataToOrderItems();
+                switch (m_ImportOrderType)
+                {
+                    case enumImportOrderType.Order:
+                        ImportdataToOrderItems();
+                        break;
+                    case enumImportOrderType.intOrder:
+                        ImportdataToIntOrderItems();
+                        break;
+                    default:
+                        break;
+                }
 
                 if (treeListImportOrder.Nodes.Count == 0)
                 {
@@ -1173,6 +1541,151 @@ namespace ERP_Mercury.Common
                 if (objNodeForDeleteList != null)
                 {
                     foreach( DevExpress.XtraTreeList.Nodes.TreeListNode objNode in objNodeForDeleteList )
+                    {
+                        treeListImportOrder.Nodes.Remove(objNode);
+                    }
+                }
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                    "Ошибка импорта данных в приложение к заказу.\nТекст ошибки: " + f.Message, "Ошибка",
+                    System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+                this.tableLayoutPanel1.ResumeLayout(false);
+                this.tableLayoutPanel1.PerformLayout();
+                ((System.ComponentModel.ISupportInitialize)(this.treeListImportOrder)).EndInit();
+
+                this.Text = strCaption;
+
+                Cursor = Cursors.Default;
+            }
+
+            return;
+
+        }
+
+        /// <summary>
+        /// Импорт данных в приложение к заказу
+        /// </summary>
+        private void ImportdataToIntOrderItems()
+        {
+            System.String strCaption = this.Text;
+            if (treeListImportOrder == null) { return; }
+            try
+            {
+                Cursor = Cursors.WaitCursor;
+                this.Text = "идёт импорт данных в приложение к заказу...";
+
+                this.tableLayoutPanel1.SuspendLayout();
+                ((System.ComponentModel.ISupportInitialize)(this.treeListImportOrder)).BeginInit();
+
+                //m_objdtOrderItems.Clear();
+                System.Data.DataRow newRowOrderItems = null;
+                CProduct objProduct = null;
+                System.Double PriceImporter = 0;
+                System.Double Price = 0;
+                System.Double dblOrderPrice = 0;
+                System.Double PriceWithDiscount = 0;
+                System.Double PriceRetail = 0;
+                System.Double NDSPercent = 0;
+                System.Double MarkUpPercent = 0;
+                System.String strErr = "";
+                System.Int32 i = 0;
+                List<DevExpress.XtraTreeList.Nodes.TreeListNode> objNodeForDeleteList = new List<DevExpress.XtraTreeList.Nodes.TreeListNode>();
+                System.Boolean bErrExists = false;
+                foreach (DevExpress.XtraTreeList.Nodes.TreeListNode objNode in treeListImportOrder.Nodes)
+                {
+                    i++;
+                    bErrExists = false;
+                    if (objNode.Tag == null) { continue; }
+                    objProduct = (CProduct)objNode.Tag;
+
+                    PriceImporter = 0;
+                    Price = 0;
+                    dblOrderPrice = 0;
+                    PriceWithDiscount = 0;
+                    PriceRetail = 0;
+                    NDSPercent = 0;
+                    MarkUpPercent = 0;
+                    strErr = System.String.Empty;
+
+                    // количество
+                    if (System.Convert.ToDouble(objNode.GetValue(colOrderQty)) <= 0)
+                    {
+                        bErrExists = true;
+                        listEditLog.Items.Add(String.Format("{0}Количество должно быть больше нуля. Количество в заказе: {1}", i, System.Convert.ToString(objNode.GetValue(colOrderQty))));
+                    }
+
+                    if (System.Convert.ToDouble(objNode.GetValue(colStockQty)) <= 0)
+                    {
+                        bErrExists = true;
+                        listEditLog.Items.Add(String.Format("{0}Товар отсутствует на складе. {1}", i, objProduct.ProductFullName));
+                    }
+
+                    dblOrderPrice = System.Convert.ToDouble(objNode.GetValue(colOrderPrice));
+
+                    if (bErrExists == false)
+                    {
+                        newRowOrderItems = m_objdtOrderItems.NewRow();
+
+                        newRowOrderItems["ProductID"] = objProduct.ID;
+                        newRowOrderItems["MeasureID"] = objProduct.Measure.ID;
+
+                        // 2014.01.03
+                        // отключаю автоматическое редактирование заказанного количества
+
+                        //if (System.Convert.ToDouble(objNode.GetValue(colOrderQty)) > System.Convert.ToDouble(objNode.GetValue(colStockQty)))
+                        //{
+                        //    newRowOrderItems["OrderedQuantity"] = System.Convert.ToDouble(objNode.GetValue(colStockQty));
+                        //    newRowOrderItems["Quantity"] = System.Convert.ToDouble(objNode.GetValue(colStockQty));
+                        //}
+                        //else
+                        {
+                            newRowOrderItems["Quantity"] = System.Convert.ToDouble(objNode.GetValue(colOrderQty));
+                        }
+
+                        newRowOrderItems["OrderItems_QuantityInstock"] = objProduct.CustomerOrderStockQty;
+                        newRowOrderItems["OrderItems_MeasureName"] = objProduct.Measure.ShortName;
+                        newRowOrderItems["OrderItems_PartsName"] = objProduct.Name;
+                        newRowOrderItems["OrderItems_PartsArticle"] = objProduct.Article;
+
+                        // 2014.01.08
+                        // реализовать универсальный метод
+                        // в GetPriceForOrderItem передавать информацию о том, что цена импортируется из прайса
+
+                        if (CIntOrder.GetPriceForOrderItem(m_objProfile, objProduct.ID, m_objSelectedStock.ID, m_objPriceType.ID, m_dblDiscountPercent,
+                            ref PriceImporter, ref Price, ref PriceWithDiscount, ref PriceRetail, ref NDSPercent, ref MarkUpPercent, 
+                            ref strErr, dblOrderPrice, checkEditImportPrices.Checked) == true)
+                        {
+                            newRowOrderItems["PriceImporter"] = PriceImporter;
+                            newRowOrderItems["Price"] = Price;
+                            newRowOrderItems["DiscountPercent"] = m_dblDiscountPercent;
+                            newRowOrderItems["PriceWithDiscount"] = PriceWithDiscount;
+                            newRowOrderItems["PriceRetail"] = PriceRetail;
+                            newRowOrderItems["NDSPercent"] = NDSPercent;
+                            newRowOrderItems["MarkUp"] = MarkUpPercent;
+
+                            objNodeForDeleteList.Add(objNode);
+                            listEditLog.Items.Add(String.Format("{0} OK", i));
+                        }
+                        else
+                        {
+                            listEditLog.Items.Add(String.Format("{0} Запрос цены для позиции: {1}", i, strErr));
+                        }
+
+                        m_objdtOrderItems.Rows.Add(newRowOrderItems);
+                    }
+                }
+
+                newRowOrderItems = null;
+                m_objdtOrderItems.AcceptChanges();
+
+                if (objNodeForDeleteList != null)
+                {
+                    foreach (DevExpress.XtraTreeList.Nodes.TreeListNode objNode in objNodeForDeleteList)
                     {
                         treeListImportOrder.Nodes.Remove(objNode);
                     }

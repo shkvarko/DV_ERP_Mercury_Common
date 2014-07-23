@@ -54,7 +54,10 @@ namespace ERP_Mercury.Common
         /// Количество
         /// </summary>
         public System.Double Quantity { get; set; }
-
+        /// <summary>
+        /// Количество возвращенное
+        /// </summary>
+        public System.Double QuantityReturned { get; set; }
         /// <summary>
         /// Цена первого поставщика (в национальной валюте)
         /// </summary>
@@ -106,6 +109,7 @@ namespace ERP_Mercury.Common
             Product = null;
             Measure = null;
             Quantity = 0;
+            QuantityReturned = 0;
             NDSPercent = 0;
             MarkUpPercent = 0;
             DiscountPercent = 0;
@@ -144,7 +148,8 @@ namespace ERP_Mercury.Common
                         objOrderItem.Ib_ID = ((objItem["IntOrderItem_Id"] != System.DBNull.Value) ? System.Convert.ToInt32(objItem["IntOrderItem_Id"]) : 0);
                         objOrderItem.Product = ((objItem["Parts_Guid"] != System.DBNull.Value) ? new CProduct()
                         {
-                            ID = (System.Guid)objItem["Parts_Guid"],
+                            ID = (System.Guid)objItem["Parts_Guid"], 
+                            ID_Ib = System.Convert.ToInt32(objItem["Parts_Id"]),
                             Name = System.Convert.ToString(objItem["PARTS_NAME"]),
                             Article = System.Convert.ToString(objItem["PARTS_ARTICLE"]),
                             ProductTradeMark = new CProductTradeMark() { Name = System.Convert.ToString(objItem["ProductOwnerName"]) }
@@ -650,6 +655,300 @@ namespace ERP_Mercury.Common
                 strErr += (String.Format("\nНе удалось получить информацию о заказе.\nТекст ошибки: {0}", f.Message));
             }
             return objOrder;
+        }
+
+        #endregion
+
+        #region Цена для позиции в заказе
+        /// <summary>
+        /// Возвращает цену для позиции в заказе на внутреннее перемещение
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="uuidPartsId">УИ товара</param>
+        /// <param name="uuidStockSrcId">УИ склада-источника</param>
+        /// <param name="uuidPaymentTypeId">УИ формы оплаты</param>
+        /// <param name="dblDiscountPercent">Размер скидки, %</param>
+        /// <param name="uuidPartsubtypePriceTypeId">Уровень цены</param>
+        /// <param name="PriceImporter">Цена импортера</param>
+        /// <param name="Price">Цена</param>
+        /// <param name="PriceWithDiscount">Цена с учетом скидки</param>
+        /// <param name="PriceRetail">Цена розничная</param>
+        /// <param name="NDSPercent">Ставка НДС, %</param>
+        /// <param name="MarkUpPercent">Размер надбавки, %</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <param name="PriceInput">входная цена</param>
+        /// <param name="InputPriceIsFixed">признак "фиксированная входная цена"</param>
+        /// <returns>true - цены рассчитаны; false - не удалось получить цены для позиции</returns>
+        public static System.Boolean GetPriceForOrderItem(UniXP.Common.CProfile objProfile, System.Guid uuidPartsId,
+            System.Guid uuidStockSrcId, System.Guid uuidPartsubtypePriceTypeId, System.Double dblDiscountPercent, 
+            ref System.Double PriceImporter, ref System.Double Price, ref System.Double PriceWithDiscount,
+            ref System.Double PriceRetail, ref System.Double NDSPercent, ref System.Double MarkUpPercent, ref System.String strErr,
+            System.Double PriceInput = 0, System.Boolean InputPriceIsFixed = false)
+        {
+            System.Boolean bRet = false;
+
+            PriceImporter = 0;
+            Price = 0;
+            PriceWithDiscount = 0;
+            PriceRetail = 0;
+            NDSPercent = 0;
+            MarkUpPercent = 0;
+
+            try
+            {
+                bRet = CIntOrderDataBaseModel.GetPriceForOrderItem(objProfile, uuidPartsId,
+                    uuidStockSrcId, uuidPartsubtypePriceTypeId, dblDiscountPercent,
+                    ref PriceImporter, ref Price, ref PriceWithDiscount,
+                    ref PriceRetail, ref NDSPercent, ref MarkUpPercent, ref strErr,
+                    PriceInput, InputPriceIsFixed);
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("Не удалось получить цены для позиции. Текст ошибки: {0}", f.Message));
+            }
+
+            return bRet;
+        }
+
+        #endregion
+
+        #region реквизиты по умолчанию для оформления нового заказа
+
+        public static System.Boolean GetOrderDefParams( UniXP.Common.CProfile objProfile, 
+            System.Guid In_PaymentType_Guid,  ref System.Boolean SetDepartValue,
+            ref System.Guid Depart_Guid, ref System.Guid PaymentType_Guid,  ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+            }
+            catch (System.Exception f)
+            {
+                strErr += f.Message;
+            }
+            return bRet;
+        }
+
+        #endregion
+
+        #region Аннулирование заказа
+        /// <summary>
+        /// Аннулирование заказа
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="IntOrder_Guid">УИ заказа</param>
+        /// <param name="IntOrderState_Guid">УИ состояния заказа</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean CancelIntOrder(UniXP.Common.CProfile objProfile,
+            System.Guid IntOrder_Guid, ref System.Guid IntOrderState_Guid, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CIntOrderDataBaseModel.CancelIntOrder( objProfile, null, IntOrder_Guid, ref IntOrderState_Guid, ref strErr );
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+        }
+        #endregion
+
+        #region Сохранение заказа в БД
+        /// <summary>
+        /// Проверяет заполнение свойств документа перед сохранением в БД
+        /// </summary>
+        /// <param name="Doc_BeginDate">дата документа</param>
+        /// <param name="Doc_Num">номер документа</param>
+        /// <param name="ShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="PaymentType_Guid">УИ формы оплаты</param>
+        /// <param name="StockSrc_Guid">УИ склада-источника</param>
+        /// <param name="StockDst_Guid">УИ склада-назанчения</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Salesman_Guid">УИ торгового представителя</param>
+        /// <param name="DocTablePart">приложение к документу</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - все обязательные поля заполнены; false - не все обязазательные поля заполнены</returns>
+        public static System.Boolean CheckAllPropertiesForSave(
+            System.DateTime Doc_BeginDate, System.String Doc_Num, 
+            System.Guid ShipMode_Guid, System.Guid PaymentType_Guid,
+            System.Guid StockSrc_Guid, System.Guid StockDst_Guid,
+            System.Guid Depart_Guid, System.Guid Salesman_Guid, 
+            System.Data.DataTable DocTablePart, ref System.String strErr)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                if (Doc_BeginDate == System.DateTime.MinValue)
+                {
+                    strErr = "Укажите, пожалуйста, дату документа.";
+                    return bRet;
+                }
+                if (Doc_Num.Trim().Length == 0)
+                {
+                    strErr = "Укажите, пожалуйста, номер документа.";
+                    return bRet;
+                }
+                if (ShipMode_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, вид отгрузки.";
+                    return bRet;
+                }
+                if (PaymentType_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, форму оплаты.";
+                    return bRet;
+                }
+                if (Depart_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, подразделение.";
+                    return bRet;
+                }
+                if (Salesman_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, торгового представителя.";
+                    return bRet;
+                }
+                if (StockSrc_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, склад-источник.";
+                    return bRet;
+                }
+                if (StockDst_Guid == System.Guid.Empty)
+                {
+                    strErr = "Укажите, пожалуйста, склад-получатель.";
+                    return bRet;
+                }
+                if ((DocTablePart == null) || (DocTablePart.Rows.Count == 0))
+                {
+                    strErr = "Приложение к документу не содержит записей. Добавьте, пожалуйста, хотя бы одну позицию.";
+                    return bRet;
+                }
+
+                bRet = true;
+            }
+            catch (System.Exception f)
+            {
+                DevExpress.XtraEditors.XtraMessageBox.Show(
+                "CheckAllPropertiesForSave.\n\nТекст ошибки: " + f.Message, "Внимание",
+                System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+            finally
+            {
+            }
+
+            return bRet;
+        }
+
+        /// <summary>
+        /// Добавляет заказ в БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Doc_BeginDate">дата документа</param>
+        /// <param name="Doc_Num">номер документа</param>
+        /// <param name="Doc_ShipDate">дата отгрузки документа</param>
+        /// <param name="DocShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="PaymentType_Guid">УИ вида платежа</param>
+        /// <param name="StockSrc_Guid">УИ склада-источника</param>
+        /// <param name="StockDst_Guid">УИ склада-получателя</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Salesman_Guid">УИ торгового представителя</param>
+        /// <param name="Doc_Description">Примечание к документу</param>
+        /// <param name="DocParent_Guid">УИ родительского документа</param>
+        /// <param name="DocTablePart">приложение к документу</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <param name="Doc_Guid">УИ документа</param>
+        /// <param name="Doc_Id">УИ документа (InterBase)</param>
+        /// <param name="DocState_Guid">УИ состояния документа</param>
+        /// <param name="DocumentSendToStock">признак "уведомить склад"</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean AddNewDocToDB(
+            UniXP.Common.CProfile objProfile, 
+            System.DateTime Doc_BeginDate, System.String Doc_Num, System.DateTime Doc_ShipDate,
+            System.Guid DocShipMode_Guid, System.Guid PaymentType_Guid, 
+            System.Guid StockSrc_Guid, System.Guid StockDst_Guid,
+            System.Guid Depart_Guid, System.Guid Salesman_Guid, 
+            System.String Doc_Description, System.Guid DocParent_Guid,
+            System.Data.DataTable DocTablePart, ref System.String strErr,
+            ref System.Guid Doc_Guid, ref System.Int32 Doc_Id, ref System.Guid DocState_Guid, 
+            System.Boolean DocumentSendToStock = false )
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CIntOrderDataBaseModel.AddNewDocToDB(objProfile, null,
+                    Doc_BeginDate, Doc_Num, Doc_ShipDate, DocShipMode_Guid, PaymentType_Guid, 
+                    StockSrc_Guid, StockDst_Guid, Depart_Guid, Salesman_Guid, 
+                    Doc_Description, DocParent_Guid, DocTablePart,
+                    ref strErr, ref Doc_Guid, ref Doc_Id, ref DocState_Guid,
+                    DocumentSendToStock);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+
+        }
+        /// <summary>
+        /// Редактирует реквизиты заказа в БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="Doc_Guid">УИ документа</param>
+        /// <param name="DocState_Guid">УИ состояния документа</param>
+        /// <param name="Doc_BeginDate">дата документа</param>
+        /// <param name="Doc_Num">номер документа</param>
+        /// <param name="Doc_ShipDate">дата отгрузки документа</param>
+        /// <param name="DocShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="PaymentType_Guid">УИ вида платежа</param>
+        /// <param name="StockSrc_Guid">УИ склада-источника</param>
+        /// <param name="StockDst_Guid">УИ склада-получателя</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Salesman_Guid">УИ торгового представителя</param>
+        /// <param name="Doc_Description">Примечание к документу</param>
+        /// <param name="DocParent_Guid">УИ родительского документа</param>
+        /// <param name="DocTablePart">приложение к документу</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <param name="DocumentSendToStock">признак "уведомить склад"</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean EditDocInDB(
+            UniXP.Common.CProfile objProfile,
+            System.Guid Doc_Guid, System.Guid DocState_Guid,
+            System.DateTime Doc_BeginDate, System.String Doc_Num, System.DateTime Doc_ShipDate,
+            System.Guid DocShipMode_Guid, System.Guid PaymentType_Guid,
+            System.Guid StockSrc_Guid, System.Guid StockDst_Guid,
+            System.Guid Depart_Guid, System.Guid Salesman_Guid,
+            System.String Doc_Description, System.Guid DocParent_Guid,
+            System.Data.DataTable DocTablePart, ref System.String strErr,
+            System.Boolean DocumentSendToStock = false)
+        {
+            System.Boolean bRet = false;
+            try
+            {
+                bRet = CIntOrderDataBaseModel.EditDocInDB(objProfile, null, Doc_Guid, DocState_Guid, 
+                    Doc_BeginDate, Doc_Num, Doc_ShipDate, DocShipMode_Guid, PaymentType_Guid,
+                    StockSrc_Guid, StockDst_Guid, Depart_Guid, Salesman_Guid,
+                    Doc_Description, DocParent_Guid, DocTablePart,
+                    ref strErr, 
+                    DocumentSendToStock);
+            }
+            catch (System.Exception f)
+            {
+                strErr += ("\n" + f.Message);
+            }
+            finally
+            {
+            }
+            return bRet;
+
         }
 
         #endregion

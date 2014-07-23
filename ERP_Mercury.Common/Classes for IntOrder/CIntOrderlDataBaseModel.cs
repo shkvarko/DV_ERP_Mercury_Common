@@ -269,6 +269,7 @@ namespace ERP_Mercury.Common
             dtReturn.Columns.Add(new System.Data.DataColumn("IntOrder_Guid", typeof(System.Guid)));
 
             dtReturn.Columns.Add(new System.Data.DataColumn("Parts_Guid", typeof(System.Guid)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("Parts_Id", typeof(System.Int32)));
             dtReturn.Columns.Add(new System.Data.DataColumn("Measure_Guid", typeof(System.Guid)));
 
             dtReturn.Columns.Add(new System.Data.DataColumn("ProductOwnerName", typeof(System.String)));
@@ -287,7 +288,7 @@ namespace ERP_Mercury.Common
             dtReturn.Columns.Add(new System.Data.DataColumn("IntOrderItem_TotalPrice", typeof(System.Double)));
             dtReturn.Columns.Add(new System.Data.DataColumn("IntOrderItem_RetailAllPrice", typeof(System.Double)));
             dtReturn.Columns.Add(new System.Data.DataColumn("IntOrderItem_NDSPercent", typeof(System.Double)));
-            dtReturn.Columns.Add(new System.Data.DataColumn("IntOrderItem_MarkUp", typeof(System.Double)));
+            dtReturn.Columns.Add(new System.Data.DataColumn("IntOrderItem_MarkUpPercent", typeof(System.Double)));
 
             System.Data.SqlClient.SqlConnection DBConnection = null;
             System.Data.SqlClient.SqlCommand cmd = null;
@@ -337,6 +338,7 @@ namespace ERP_Mercury.Common
                         newRow["IntOrderItem_Id"] = ((rs["IntOrderItem_Id"] != System.DBNull.Value) ? (System.Int32)rs["IntOrderItem_Id"] : 0);
                         newRow["Measure_Guid"] = ((rs["Measure_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Measure_Guid"] : System.Guid.Empty);
                         newRow["Parts_Guid"] = ((rs["Parts_Guid"] != System.DBNull.Value) ? (System.Guid)rs["Parts_Guid"] : System.Guid.Empty);
+                        newRow["Parts_Id"] = ( (rs["Parts_Id"] != System.DBNull.Value) ? System.Convert.ToInt32(rs["Parts_Id"]) : 0 );
 
                         newRow["ProductOwnerName"] = ((rs["ProductOwnerName"] != System.DBNull.Value) ? System.Convert.ToString(rs["ProductOwnerName"]) : System.String.Empty);
                         newRow["PARTS_NAME"] = ((rs["PARTS_NAME"] != System.DBNull.Value) ? System.Convert.ToString(rs["PARTS_NAME"]) : System.String.Empty);
@@ -351,7 +353,7 @@ namespace ERP_Mercury.Common
                         newRow["IntOrderItem_Discount"] = rs["IntOrderItem_Discount"];
                         newRow["IntOrderItem_DiscountPrice"] = rs["IntOrderItem_DiscountPrice"];
                         newRow["IntOrderItem_NDSPercent"] = rs["IntOrderItem_NDSPercent"];
-
+                        newRow["IntOrderItem_MarkUpPercent"] = rs["IntOrderItem_MarkUpPercent"];
                         newRow["IntOrderItem_AllPrice"] = rs["IntOrderItem_AllPrice"];
                         newRow["IntOrderItem_TotalPrice"] = rs["IntOrderItem_TotalPrice"];
                         newRow["IntOrderItem_RetailAllPrice"] = rs["IntOrderItem_RetailAllPrice"];
@@ -375,6 +377,465 @@ namespace ERP_Mercury.Common
             return dtReturn;
         }
 
+        #endregion
+
+        #region Аннулирование заказа
+        /// <summary>
+        /// Аннулирование заказа
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="IntOrder_Guid">УИ заказа</param>
+        /// <param name="IntOrderState_Guid">УИ состояния заказа</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean CancelIntOrder(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid IntOrder_Guid, ref System.Guid IntOrderState_Guid, ref System.String strErr)
+        {
+
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr = "Не удалось получить соединение с базой данных.";
+                        return bRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_CancelIntOrder]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderState_Guid", System.Data.SqlDbType.UniqueIdentifier) { Direction = System.Data.ParameterDirection.Output });
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters["@Waybill_Guid"].Value = IntOrder_Guid;
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    IntOrderState_Guid = (System.Guid)cmd.Parameters["@IntOrderState_Guid"].Value;
+
+                    strErr = "Заказ на внутреннее перемещение аннулирован.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
+        #endregion
+
+        #region Сохранение заказа в БД
+        /// <summary>
+        /// Добавляет заказ в БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="Doc_BeginDate">дата документа</param>
+        /// <param name="Doc_Num">номер документа</param>
+        /// <param name="Doc_ShipDate">дата отгрузки документа</param>
+        /// <param name="DocShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="PaymentType_Guid">УИ вида платежа</param>
+        /// <param name="StockSrc_Guid">УИ склада-источника</param>
+        /// <param name="StockDst_Guid">УИ склада-получателя</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Salesman_Guid">УИ торгового представителя</param>
+        /// <param name="Doc_Description">Примечание к документу</param>
+        /// <param name="DocParent_Guid">УИ родительского документа</param>
+        /// <param name="DocTablePart">приложение к документу</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <param name="Doc_Guid">УИ документа</param>
+        /// <param name="Doc_Id">УИ документа (InterBase)</param>
+        /// <param name="DocState_Guid">УИ состояния документа</param>
+        /// <param name="DocumentSendToStock">признак "уведомить склад"</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean AddNewDocToDB(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.DateTime Doc_BeginDate, System.String Doc_Num, System.DateTime Doc_ShipDate,
+            System.Guid DocShipMode_Guid, System.Guid PaymentType_Guid, 
+            System.Guid StockSrc_Guid, System.Guid StockDst_Guid,
+            System.Guid Depart_Guid, System.Guid Salesman_Guid, 
+            System.String Doc_Description, System.Guid DocParent_Guid,
+            System.Data.DataTable DocTablePart, ref System.String strErr,
+            ref System.Guid Doc_Guid, ref System.Int32 Doc_Id, ref System.Guid DocState_Guid, 
+            System.Boolean DocumentSendToStock = false)
+        {
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr += ("Не удалось получить соединение с базой данных.");
+                        return bRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_AddIntOrder]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Guid", System.Data.SqlDbType.UniqueIdentifier, 4, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Id", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderState_Guid", System.Data.SqlDbType.UniqueIdentifier, 4, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderShipMode_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_BeginDate", System.Data.SqlDbType.Date));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Depart_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Salesman_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PaymentType_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Description", System.Data.DbType.String));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Num", System.Data.DbType.String));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@SrcStock_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@DstStock_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.AddWithValue("@tIntOrderItms", DocTablePart);
+                cmd.Parameters["@tIntOrderItms"].SqlDbType = System.Data.SqlDbType.Structured;
+                cmd.Parameters["@tIntOrderItms"].TypeName = "dbo.udt_IntOrderItms";
+
+                if (DocParent_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderParent_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                    cmd.Parameters["@IntOrderParent_Guid"].Value = DocParent_Guid;
+                }
+                if (System.DateTime.Compare(Doc_ShipDate, System.DateTime.MinValue) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_ShipDate", System.Data.SqlDbType.Date));
+                    cmd.Parameters["@IntOrder_ShipDate"].Value = Doc_ShipDate;
+                }
+
+                cmd.Parameters["@IntOrder_BeginDate"].Value = Doc_BeginDate;
+                cmd.Parameters["@Depart_Guid"].Value = Depart_Guid;
+                cmd.Parameters["@Salesman_Guid"].Value = Salesman_Guid;
+                cmd.Parameters["@SrcStock_Guid"].Value = StockSrc_Guid;
+                cmd.Parameters["@DstStock_Guid"].Value = StockDst_Guid;
+                cmd.Parameters["@IntOrderShipMode_Guid"].Value = DocShipMode_Guid;
+                cmd.Parameters["@PaymentType_Guid"].Value = PaymentType_Guid;
+                cmd.Parameters["@IntOrder_Description"].Value = Doc_Description;
+                cmd.Parameters["@IntOrder_Num"].Value = Doc_Num;
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    Doc_Guid = (System.Guid)cmd.Parameters["@IntOrder_Guid"].Value;
+                    Doc_Id = (System.Int32)cmd.Parameters["@IntOrder_Id"].Value;
+                    DocState_Guid = (System.Guid)cmd.Parameters["@IntOrderState_Guid"].Value;
+
+                    strErr = "Заказ успешно сохранен.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
+
+        /// <summary>
+        /// Редактирует реквизиты заказа в БД
+        /// </summary>
+        /// <param name="objProfile">профайл</param>
+        /// <param name="cmdSQL">SQL-команда</param>
+        /// <param name="Doc_Guid">УИ документа</param>
+        /// <param name="DocState_Guid">УИ состояния документа</param>
+        /// <param name="Doc_BeginDate">дата документа</param>
+        /// <param name="Doc_Num">номер документа</param>
+        /// <param name="Doc_ShipDate">дата отгрузки документа</param>
+        /// <param name="DocShipMode_Guid">УИ вида отгрузки</param>
+        /// <param name="PaymentType_Guid">УИ вида платежа</param>
+        /// <param name="StockSrc_Guid">УИ склада-источника</param>
+        /// <param name="StockDst_Guid">УИ склада-получателя</param>
+        /// <param name="Depart_Guid">УИ торгового подразделения</param>
+        /// <param name="Salesman_Guid">УИ торгового представителя</param>
+        /// <param name="Doc_Description">Примечание к документу</param>
+        /// <param name="DocParent_Guid">УИ родительского документа</param>
+        /// <param name="DocTablePart">приложение к документу</param>
+        /// <param name="strErr">текст ошибки</param>
+        /// <param name="DocumentSendToStock">признак "уведомить склад"</param>
+        /// <returns>true - удачное завершение операции; false - ошибка</returns>
+        public static System.Boolean EditDocInDB(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
+            System.Guid Doc_Guid, System.Guid DocState_Guid, 
+            System.DateTime Doc_BeginDate, System.String Doc_Num, System.DateTime Doc_ShipDate,
+            System.Guid DocShipMode_Guid, System.Guid PaymentType_Guid,
+            System.Guid StockSrc_Guid, System.Guid StockDst_Guid,
+            System.Guid Depart_Guid, System.Guid Salesman_Guid,
+            System.String Doc_Description, System.Guid DocParent_Guid,
+            System.Data.DataTable DocTablePart, ref System.String strErr,
+            System.Boolean DocumentSendToStock = false)
+        {
+            System.Boolean bRet = false;
+            System.Data.SqlClient.SqlConnection DBConnection = null;
+            System.Data.SqlClient.SqlCommand cmd = null;
+            try
+            {
+                if (cmdSQL == null)
+                {
+                    DBConnection = objProfile.GetDBSource();
+                    if (DBConnection == null)
+                    {
+                        strErr += ("Не удалось получить соединение с базой данных.");
+                        return bRet;
+                    }
+                    cmd = new System.Data.SqlClient.SqlCommand();
+                    cmd.Connection = DBConnection;
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                }
+                else
+                {
+                    cmd = cmdSQL;
+                    cmd.Parameters.Clear();
+                }
+                cmd.CommandTimeout = 600;
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_EditIntOrder]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderState_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000) { Direction = System.Data.ParameterDirection.Output });
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderShipMode_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_BeginDate", System.Data.SqlDbType.Date));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Depart_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Salesman_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PaymentType_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Description", System.Data.DbType.String));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_Num", System.Data.DbType.String));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@SrcStock_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@DstStock_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.AddWithValue("@tIntOrderItms", DocTablePart);
+                cmd.Parameters["@tIntOrderItms"].SqlDbType = System.Data.SqlDbType.Structured;
+                cmd.Parameters["@tIntOrderItms"].TypeName = "dbo.udt_IntOrderItms";
+
+                if (DocParent_Guid.CompareTo(System.Guid.Empty) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrderParent_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                    cmd.Parameters["@IntOrderParent_Guid"].Value = DocParent_Guid;
+                }
+                if (System.DateTime.Compare(Doc_ShipDate, System.DateTime.MinValue) != 0)
+                {
+                    cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@IntOrder_ShipDate", System.Data.SqlDbType.Date));
+                    cmd.Parameters["@IntOrder_ShipDate"].Value = Doc_ShipDate;
+                }
+
+                cmd.Parameters["@IntOrder_Guid"].Value = Doc_Guid;
+                cmd.Parameters["@IntOrderState_Guid"].Value = DocState_Guid;
+                cmd.Parameters["@IntOrder_BeginDate"].Value = Doc_BeginDate;
+                cmd.Parameters["@Depart_Guid"].Value = Depart_Guid;
+                cmd.Parameters["@Salesman_Guid"].Value = Salesman_Guid;
+                cmd.Parameters["@SrcStock_Guid"].Value = StockSrc_Guid;
+                cmd.Parameters["@DstStock_Guid"].Value = StockDst_Guid;
+                cmd.Parameters["@IntOrderShipMode_Guid"].Value = DocShipMode_Guid;
+                cmd.Parameters["@PaymentType_Guid"].Value = PaymentType_Guid;
+                cmd.Parameters["@IntOrder_Description"].Value = Doc_Description;
+                cmd.Parameters["@IntOrder_Num"].Value = Doc_Num;
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+
+                strErr += (System.Convert.ToString(cmd.Parameters["@ERROR_MES"].Value));
+
+                if (iRes == 0)
+                {
+                    strErr = "Заказ успешно сохранен.";
+                }
+                else
+                {
+                    strErr = strErr.Replace("\r", "\n");
+                }
+
+                bRet = (iRes == 0);
+                if (cmdSQL == null)
+                {
+                    cmd.Dispose();
+                    cmd = null;
+                }
+
+            }
+            catch (System.Exception f)
+            {
+                strErr = f.Message;
+            }
+            finally
+            {
+                if (DBConnection != null)
+                {
+                    DBConnection.Close();
+                }
+            }
+            return bRet;
+        }
+        
+        #endregion
+
+        #region Цена для позиции в заказе
+        public static System.Boolean GetPriceForOrderItem(UniXP.Common.CProfile objProfile, System.Guid uuidPartsId,
+            System.Guid uuidStockSrcId, System.Guid uuidPartsubtypePriceTypeId, System.Double dblDiscountPercent, 
+            ref System.Double PriceImporter, ref System.Double Price, ref System.Double PriceWithDiscount,
+            ref System.Double PriceRetail, ref System.Double NDSPercent, ref System.Double MarkUpPercent, ref System.String strErr,
+            System.Double PriceInput = 0, System.Boolean InputPriceIsFixed = false
+            )
+        {
+            System.Boolean bRet = false;
+
+            PriceImporter = 0;
+            Price = 0;
+            PriceWithDiscount = 0;
+            PriceRetail = 0;
+            NDSPercent = 0;
+            MarkUpPercent = 0;
+
+            bRet = true;
+
+            // подключаемся к БД
+            System.Data.SqlClient.SqlConnection DBConnection = objProfile.GetDBSource();
+            if (DBConnection == null)
+            {
+                strErr += ("Отсутствует соединение с БД.");
+                return bRet;
+            }
+
+            try
+            {
+                // соединение с БД получено, прописываем команду на выборку данных
+                System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
+                cmd.CommandTimeout = 600;
+                cmd.Connection = DBConnection;
+                cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                cmd.Parameters.Clear();
+                cmd.CommandText = System.String.Format("[{0}].[dbo].[usp_GetPriceForIntOrder]", objProfile.GetOptionsDllDBName());
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@RETURN_VALUE", System.Data.SqlDbType.Int, 4, System.Data.ParameterDirection.ReturnValue, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Parts_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PartsubtypePriceType_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Stock_Guid", System.Data.SqlDbType.UniqueIdentifier));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@DiscountPercent", System.Data.SqlDbType.Decimal));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PriceInput", System.Data.SqlDbType.Money));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@InputPriceIsFixed", System.Data.SqlDbType.Bit));
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@NDSPercent", System.Data.SqlDbType.Money));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@MarkUpPercent", System.Data.SqlDbType.Money));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PriceImporter", System.Data.SqlDbType.Money));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Price", System.Data.SqlDbType.Money));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PriceWithDiscount", System.Data.SqlDbType.Money));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@PriceRetail", System.Data.SqlDbType.Money));
+
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_NUM", System.Data.SqlDbType.Int, 8, System.Data.ParameterDirection.Output, false, ((System.Byte)(0)), ((System.Byte)(0)), "", System.Data.DataRowVersion.Current, null));
+                cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@ERROR_MES", System.Data.SqlDbType.NVarChar, 4000));
+                cmd.Parameters["@ERROR_MES"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@NDSPercent"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@MarkUpPercent"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@PriceImporter"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@Price"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@PriceWithDiscount"].Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters["@PriceRetail"].Direction = System.Data.ParameterDirection.Output;
+
+                cmd.Parameters["@Parts_Guid"].Value = uuidPartsId;
+                cmd.Parameters["@Stock_Guid"].Value = uuidStockSrcId;
+                cmd.Parameters["@PartsubtypePriceType_Guid"].Value = uuidPartsubtypePriceTypeId;
+                cmd.Parameters["@DiscountPercent"].Value = dblDiscountPercent;
+                cmd.Parameters["@PriceInput"].Value = PriceInput;
+                cmd.Parameters["@InputPriceIsFixed"].Value = InputPriceIsFixed;
+
+                cmd.ExecuteNonQuery();
+                System.Int32 iRes = (System.Int32)cmd.Parameters["@RETURN_VALUE"].Value;
+                if (iRes == 0)
+                {
+                    PriceImporter = System.Convert.ToDouble(cmd.Parameters["@PriceImporter"].Value);
+                    Price = System.Convert.ToDouble(cmd.Parameters["@Price"].Value);
+                    PriceWithDiscount = System.Convert.ToDouble(cmd.Parameters["@PriceWithDiscount"].Value);
+                    PriceRetail = System.Convert.ToDouble(cmd.Parameters["@PriceRetail"].Value);
+                    NDSPercent = System.Convert.ToDouble(cmd.Parameters["@NDSPercent"].Value);
+                    MarkUpPercent = System.Convert.ToDouble(cmd.Parameters["@MarkUpPercent"].Value);
+
+                    bRet = true;
+                }
+                else
+                {
+                    bRet = false;
+                    strErr = (System.String)cmd.Parameters["@ERROR_MES"].Value;
+                }
+
+                cmd.Dispose();
+
+
+
+
+            }
+            catch (System.Exception f)
+            {
+                strErr += (String.Format("Не удалось получить цены для позиции. Текст ошибки: {0}", f.Message));
+            }
+
+            return bRet;
+        }
         #endregion
 
     }

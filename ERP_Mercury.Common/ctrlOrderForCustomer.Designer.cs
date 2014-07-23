@@ -563,7 +563,7 @@
             // mitmsImportFromExcel
             // 
             this.mitmsImportFromExcel.Name = "mitmsImportFromExcel";
-            this.mitmsImportFromExcel.Size = new System.Drawing.Size(130, 22);
+            this.mitmsImportFromExcel.Size = new System.Drawing.Size(152, 22);
             this.mitmsImportFromExcel.Text = "из MS Excel";
             this.mitmsImportFromExcel.Click += new System.EventHandler(this.mitmsImportFromExcel_Click);
             // 

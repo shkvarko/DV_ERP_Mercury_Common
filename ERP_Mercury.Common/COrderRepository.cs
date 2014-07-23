@@ -1533,9 +1533,11 @@ namespace ERP_Mercury.Common
         /// <param name="objProfile">профайл</param>
         /// <param name="cmdSQL">SQL-команда</param>
         /// <param name="uuidStockId">уи склада</param>
+        /// <param name="iMovementTypeId">тип движения (0 - заказа на отгрузку, 1 - внутреннее перемещение)</param>
         /// <returns>список товаров</returns>
         public static List<CProduct> GetPartsInstockList(UniXP.Common.CProfile objProfile, System.Data.SqlClient.SqlCommand cmdSQL,
-            System.Guid uuidStockId, System.Guid uuidOrderId, System.Boolean bForWaybill = false, System.Boolean bWaybillCreateFromSuppl = false)
+            System.Guid uuidStockId, System.Guid uuidOrderId, System.Boolean bForWaybill = false, 
+            System.Boolean bWaybillCreateFromSuppl = false, System.Int32 iMovementTypeId = 0 )
         {
             List<CProduct> objList = new List<CProduct>();
             System.Data.SqlClient.SqlConnection DBConnection = null;
@@ -1588,6 +1590,8 @@ namespace ERP_Mercury.Common
                     {
                         cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@Order_Guid", System.Data.SqlDbType.UniqueIdentifier));
                         cmd.Parameters["@Order_Guid"].Value = uuidOrderId;
+                        cmd.Parameters.Add(new System.Data.SqlClient.SqlParameter("@MovementTypeId", System.Data.SqlDbType.Int));
+                        cmd.Parameters["@MovementTypeId"].Value = iMovementTypeId;
                     }
                 }
 
